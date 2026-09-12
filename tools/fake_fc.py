@@ -163,3 +163,64 @@ class FakeFlightController:
         if head in ("motor", "map", "feature", "batch", "profile"):
             return ""
         return ""
+
+
+class FakeMspDevice:
+    """Serial stand-in speaking MSP v1, for `tools/bf_msp.py`.
+
+    MSP is a separate protocol from the CLI: binary framed, not line based, so
+    it needs its own fake. Frames are `$M<` for a request and `$M>` for a
+    reply, with an XOR checksum over the length, the code, and the payload.
+
+    Usage:
+        device = FakeMspDevice({101: struct.pack("<H", 1500)})
+        payload, error = msp_request(device, 101)
+    """
+
+    def __init__(self, responses=None, corrupt_checksum=False, send_error=False):
+        self.responses = dict(responses or {})
+        self.corrupt_checksum = corrupt_checksum
+        self.send_error = send_error
+        self.requested = []
+        self._out = bytearray()
+        self.closed = False
+        self.dtr = False
+
+    @staticmethod
+    def frame(code, payload, corrupt=False):
+        """Build a `$M>` reply frame with a correct (or deliberately bad) checksum."""
+        length = len(payload)
+        checksum = length ^ code
+        for byte in payload:
+            checksum ^= byte
+        if corrupt:
+            checksum ^= 0xFF
+        return b"$M>" + bytes([length, code]) + bytes(payload) + bytes([checksum])
+
+    def write(self, data):
+        # A request is $M< + length + code + checksum.
+        if data[:3] == b"$M<" and len(data) >= 6:
+            code = data[4]
+            self.requested.append(code)
+            if self.send_error:
+                self._out += b"$M!" + bytes([0, code, code])
+            else:
+                payload = self.responses.get(code, b"")
+                self._out += self.frame(code, payload, self.corrupt_checksum)
+        return len(data)
+
+    def read(self, size=1):
+        if not self._out:
+            return b""
+        chunk = bytes(self._out[:size])
+        del self._out[:size]
+        return chunk
+
+    def flush(self):
+        pass
+
+    def reset_input_buffer(self):
+        self._out.clear()
+
+    def close(self):
+        self.closed = True
