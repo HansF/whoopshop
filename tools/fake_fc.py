@@ -43,6 +43,8 @@ def default_responses():
     """Canned replies keyed by the exact command text."""
     return {
         "status": _fixture("status.txt"),
+        "version": _fixture("version.txt"),
+        "get craft_name": "craft_name = WHOOP",
         "diff all": _fixture("diff_all.txt"),
         "diff": _fixture("diff_all.txt"),
         "get dshot_bidir": _fixture("get_dshot_bidir.txt"),

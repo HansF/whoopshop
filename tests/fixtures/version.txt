@@ -1,0 +1,3 @@
+# Betaflight / STM32F7X2 (S7X2) 4.5.1 Jun  1 2026 / 10:00:00 (77d01ba3b) MSP API: 1.46
+# board: manufacturer_id: BEFH, board_name: BETAFPVG473
+# config rev: 8e0f7c1

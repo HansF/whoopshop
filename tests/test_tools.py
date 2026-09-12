@@ -6,7 +6,7 @@ from unittest import mock
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from tools import backup_restore, motor_tool, preflight
+from tools import backup_restore, capture_log, motor_tool, preflight
 from tools.bf_vars import validate
 from tools.fake_fc import FakeFlightController
 from tools.fc_session import CliSession
@@ -123,6 +123,42 @@ class BackupTest(unittest.TestCase):
             with self.assertRaises(SystemExit):
                 backup_restore.restore_backup(os.path.join(FIXTURES, "diff_all.txt"))
         self.assertEqual(fake.commands, [])
+
+
+class CaptureLogTest(unittest.TestCase):
+    """`status` carries no board name, so `version` has to be read as well."""
+
+    def test_board_name_comes_from_version(self):
+        info = capture_log.parse_version(
+            "# Betaflight / STM32F7X2 (S7X2) 4.5.1 Jun  1 2026 / 10:00:00 MSP API: 1.46\n"
+            "# board: manufacturer_id: BEFH, board_name: BETAFPVG473\n")
+        self.assertEqual(info["board"], "BETAFPVG473")
+        self.assertTrue(info["firmware"].startswith("Betaflight /"))
+
+    def test_version_without_board_line_is_tolerated(self):
+        self.assertNotIn("board", capture_log.parse_version("# Betaflight / F405 4.4.0"))
+
+    def test_telemetry_fills_board_and_craft_name(self):
+        fake = FakeFlightController()
+        with mock.patch.object(capture_log, "CliSession", bound_session(fake)):
+            metrics = capture_log.capture_telemetry()
+        self.assertEqual(metrics["board"], "BETAFPVG473")
+        self.assertEqual(metrics["craft_name"], "WHOOP")
+        self.assertEqual(fake.commands[-1], "exit noreboot")
+
+    def test_craft_name_ignores_allowed_values_line(self):
+        """A reply's second line must not leak into the value."""
+        fake = FakeFlightController(
+            responses={"get craft_name": "craft_name = WHOOP\nAllowed values: 1-16"})
+        with mock.patch.object(capture_log, "CliSession", bound_session(fake)):
+            metrics = capture_log.capture_telemetry()
+        self.assertEqual(metrics["craft_name"], "WHOOP")
+
+    def test_telemetry_failure_degrades_gracefully(self):
+        fake = FakeFlightController(prompt_on_handshake=False)
+        with mock.patch.object(capture_log, "CliSession", bound_session(fake)):
+            metrics = capture_log.capture_telemetry()
+        self.assertEqual(metrics["board"], "Unknown")
 
 
 class PreflightTest(unittest.TestCase):

@@ -65,6 +65,23 @@ def blackbox_section(log_file):
         return f"- Could not analyze `{os.path.basename(csv_path)}`: {err}"
 
 
+def parse_version(output_text):
+    """Pull firmware and board name from the CLI `version` reply.
+
+    `status` carries neither. Betaflight prints them as:
+        # Betaflight / STM32F7X2 (S7X2) 4.5.1 ... MSP API: 1.46
+        # board: manufacturer_id: BEFH, board_name: BETAFPVG473
+    """
+    info = {}
+    for line in output_text.splitlines():
+        stripped = line.strip().lstrip("#").strip()
+        if stripped.startswith("Betaflight /"):
+            info["firmware"] = stripped
+        elif "board_name:" in stripped:
+            info["board"] = stripped.split("board_name:", 1)[1].split(",")[0].strip()
+    return info
+
+
 def parse_cli_status(output_text):
     """Extract key metrics from CLI 'status' command output."""
     info = {
@@ -94,6 +111,7 @@ def capture_telemetry(port=None):
         with CliSession(port=port) as fc:
             results = fc.run_many([
                 "status",
+                "version",
                 "get craft_name",
                 "get blackbox_sample_rate",
                 "get motor_pwm_protocol",
@@ -103,10 +121,13 @@ def capture_telemetry(port=None):
         results = {}
 
     metrics = parse_cli_status(results.get("status", ""))
+    metrics.update(parse_version(results.get("version", "")))
 
     craft = results.get("get craft_name", "")
     if "=" in craft:
-        value = craft.split("=", 1)[1].strip()
+        # Take the first line only: some variables print an "Allowed values"
+        # line underneath, which must not end up in the craft name.
+        value = craft.split("=", 1)[1].splitlines()[0].strip()
         if value:
             metrics["craft_name"] = value
 
