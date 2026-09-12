@@ -2,6 +2,8 @@
 title: "65mm Pro Micro Whoop Build Spec"
 date: 2026-09-12T10:00:00Z
 draft: false
+craft_name: "WHOOP_SHOP_01"
+tags: [hardware]
 ---
 
 ## Hardware Specification

@@ -2,13 +2,14 @@
 title: "BETAFPV FC Gyroscope & Firmware Notes"
 date: 2026-09-12T19:45:00Z
 draft: false
+tags: [firmware, hardware, osd, safety]
 ---
 
 # BETAFPV FC Gyroscope & Firmware Notes
 
 Supplied by BETAFPV in the box with the flight controller. This applies to the
 G473 AIO boards in this workshop, including the one in
-[AIR65 F](/spec/air65-build/).
+[AIR65 F](/spec/air65-build.html).
 
 > [!CAUTION]
 > **Do not flash official Betaflight firmware onto this board.** Betaflight has not

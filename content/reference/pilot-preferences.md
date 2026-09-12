@@ -2,6 +2,7 @@
 title: "Pilot Preferences — HansF Standard Setup"
 date: 2026-09-12T19:30:00Z
 draft: false
+tags: [setup, modes, rates, reference]
 ---
 
 # Pilot Preferences — HansF Standard Setup
@@ -99,7 +100,7 @@ python tools/bf_cli.py --save \
 > [!CAUTION]
 > Never copy `vcd_video_system` or `osd_displayport_device` between craft. BETAFPV
 > boards need them pinned to `NTSC` and `MAX7456` or the OSD goes blank. See
-> [BETAFPV FC Gyroscope & Firmware Notes](/reference/betafpv-fc-gyro-firmware-notes/).
+> [BETAFPV FC Gyroscope & Firmware Notes](/reference/betafpv-fc-gyro-firmware-notes.html).
 
 > [!CAUTION]
 > `aux 4 0 0 900 900 0 0` clears slot 4. Many factory configurations park crashflip

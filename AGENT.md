@@ -42,6 +42,7 @@ All serial interactions with the Flight Controller must use the provided Python 
 - **Execute CLI Commands**: `python tools/bf_cli.py "<cmd1>" "<cmd2>"`
 - **Save CLI Changes**: `python tools/bf_cli.py --save "<set_cmd>"`
 - **Read Live MSP Data / RC Channels**: `python tools/bf_msp.py --samples [n]`
+- **Build the Workshop Site**: `python tools/serve_site.py --build-only`
 - **Blackbox Log Helper**: `python tools/blackbox_tool.py`
 - **PID & Rate Tuning Helper**: `python tools/tuning_tool.py`
 - **ExpressLRS RX Helper**: `python tools/elrs_tool.py`
@@ -120,3 +121,30 @@ no flight controller; `tools/fake_fc.py` stands in for the board.
 - `config/`: Baseline configuration templates and CLI backups (`config/backups/`).
 - `workshop/`: `build_spec.md` (hardware inventory) and `flight_log.md` (test history & tuning journal).
 - `logs/`: Local Blackbox log directory.
+
+
+---
+
+## 6. Content Taxonomy (Multi-Craft)
+
+The repo holds every drone at once. Two frontmatter fields keep that navigable:
+
+- `craft_name:` (or `craft:`) — which drone the page is about. Omit it for shared
+  knowledge that applies to the whole workshop.
+- `tags:` — what the page is about. Inline `[a, b]` or a block list, both parse.
+
+`tools/serve_site.py` reads these and generates `/craft/<slug>.html` and
+`/tags/<slug>.html` collection pages plus their indexes. Nothing is registered
+anywhere, so adding a drone means adding a page with a `craft_name`.
+
+When writing a new page:
+
+1. Reuse an existing tag if one fits. Check `/tags/` or
+   `content/reference/tagging.md` before inventing one.
+2. Spell the craft name exactly as Betaflight reports `craft_name`, or the drone
+   will split across two pages.
+3. Put per-craft facts on the craft's own pages, and anything reusable in
+   `content/reference/` with tags but no craft.
+
+`tools/capture_log.py` and `tools/dump_vars.py` already emit correct frontmatter,
+so generated pages stay in the taxonomy without manual edits.

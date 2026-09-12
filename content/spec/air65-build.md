@@ -3,6 +3,7 @@ title: "BetaFPV Air65 Build Spec"
 date: 2026-09-12T19:30:00Z
 craft_name: "AIR65 F"
 draft: false
+tags: [hardware, setup, rates, modes, osd]
 ---
 
 ## Hardware Specification
@@ -23,15 +24,15 @@ draft: false
 > firmware** because its gyro is not yet supported by official releases. Do not
 > flash stock Betaflight onto it, and use the development configurator at
 > <https://master.app.betaflight.com/> rather than the release one. Full details in
-> [BETAFPV FC Gyroscope & Firmware Notes](/reference/betafpv-fc-gyro-firmware-notes/).
+> [BETAFPV FC Gyroscope & Firmware Notes](/reference/betafpv-fc-gyro-firmware-notes.html).
 
 ---
 
 ## Configuration Baseline
 
 Set up on 2026-09-12 to match the pilot preferences carried over from
-[Crafty](/log/2026-09-12-air65-setup/). See
-[Pilot Preferences](/reference/pilot-preferences/) for the reusable block.
+[Crafty](/log/2026-09-12-air65-setup.html). See
+[Pilot Preferences](/reference/pilot-preferences.html) for the reusable block.
 
 ### Switch Layout
 

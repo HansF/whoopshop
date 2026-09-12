@@ -1,6 +1,7 @@
 ---
 title: "Complete CLI Variable Reference"
 draft: false
+tags: [cli, reference]
 ---
 
 Every setting exposed by `Betaflight / STM32G47X (G473) 2026.6.0-alpha Apr 15 2026 / 16:24:57 (norevision) MSP API: 1.48`.

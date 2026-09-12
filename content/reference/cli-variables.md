@@ -2,6 +2,7 @@
 title: "Betaflight CLI Variables Cheat Sheet for 1S/2S Whoops"
 date: 2026-09-12T10:00:00Z
 draft: false
+tags: [cli, reference]
 ---
 
 # Betaflight CLI Variables Cheat Sheet for 1S/2S Whoops

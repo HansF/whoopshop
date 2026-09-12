@@ -2,6 +2,7 @@
 title: "Blackbox Extraction & Log Analysis Guide"
 date: 2026-09-12T10:00:00Z
 draft: false
+tags: [blackbox, tuning]
 ---
 
 # Blackbox Extraction & Log Analysis Guide

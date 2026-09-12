@@ -5,6 +5,7 @@ craft_name: "WHOOP_SHOP"
 battery_voltage: "1S LiHV"
 log_file: ""
 draft: false
+tags: [flight-log]
 ---
 
 ## Flight Overview

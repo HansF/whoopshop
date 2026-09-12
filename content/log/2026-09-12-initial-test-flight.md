@@ -5,6 +5,7 @@ craft_name: "WHOOP_SHOP_01"
 battery_voltage: "1S LiHV 300mAh"
 log_file: "btfl_001.bbl"
 draft: false
+tags: [blackbox, tuning]
 ---
 
 ## Flight Overview

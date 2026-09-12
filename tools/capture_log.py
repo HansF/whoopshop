@@ -159,6 +159,11 @@ def create_log_entry(title, log_file="", dry_run=False, port=None):
 
     analysis = blackbox_section(log_file)
 
+    # Tags drive the /tags/ and /craft/ collection pages on the site.
+    log_tags = "flight-log, telemetry"
+    if log_file:
+        log_tags += ", blackbox"
+
     markdown_content = f"""---
 title: "{title}"
 date: {date_str}
@@ -166,6 +171,7 @@ craft_name: "{metrics['craft_name']}"
 board: "{metrics['board']}"
 log_file: "{log_file}"
 draft: false
+tags: [{log_tags}]
 ---
 
 ## 1. Flight Overview & Objectives

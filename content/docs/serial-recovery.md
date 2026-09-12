@@ -2,6 +2,7 @@
 title: "Serial Recovery & Troubleshooting Guide"
 date: 2026-09-12T10:00:00Z
 draft: false
+tags: [cli, safety]
 ---
 
 # Serial Recovery & Troubleshooting Guide

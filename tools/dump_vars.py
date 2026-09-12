@@ -150,6 +150,7 @@ def render_reference(variables, firmware):
         "---",
         'title: "Complete CLI Variable Reference"',
         "draft: false",
+        "tags: [cli, reference, generated]",
         "---",
         "",
         f"Every setting exposed by `{firmware}`.",

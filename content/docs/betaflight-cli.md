@@ -2,6 +2,7 @@
 title: "Betaflight CLI Serial Protocol Guide"
 date: 2026-09-12T10:00:00Z
 draft: false
+tags: [cli, reference]
 ---
 
 # Betaflight CLI Serial Protocol Guide

@@ -9,6 +9,7 @@ Self-contained cross-platform (Windows, Linux, macOS) workspace and AI toolkit f
 - **Apply & Save Settings**: `python tools/bf_cli.py --save "set craft_name = WHOOP"`
 - **Read Live Telemetry / RC**: `python tools/bf_msp.py --samples 5`
 - **Manage Blackbox Flash**: `python tools/blackbox_tool.py --info`
+- **Build / Serve the Workshop Site**: `python tools/serve_site.py --build-only`
 
 ## Architecture & Rules
 
@@ -16,4 +17,5 @@ Self-contained cross-platform (Windows, Linux, macOS) workspace and AI toolkit f
 2. **Cross-Platform First**: Python tools use `pyserial` port enumeration for Windows (`COM*`), macOS (`/dev/tty.usbmodem*`), and Linux (`/dev/ttyACM*`).
 3. **CLI Exit Discipline**: Every CLI session must exit cleanly (`exit noreboot` or `save`). Failing to exit locks the FC in CLI mode, blocking MSP calls and subsequent CLI connections until USB is replugged.
 4. **Never Flash Stock Betaflight**: The BETAFPV G473 boards run a *customized BETAFPV build of the Betaflight developer firmware*, because their gyro (BMI270 / ICM42622 / LSM6DSV16X and others substituted for the scarce ICM42688) is not supported by official releases. Flashing a stock release can leave the gyro undetected. Use the dev configurator at <https://master.app.betaflight.com/>. Keep `osd_displayport_device = MAX7456` and `vcd_video_system = NTSC` pinned or the OSD goes blank. See `content/reference/betafpv-fc-gyro-firmware-notes.md`.
-5. **Blackbox Policy**: Raw `.bbl` and `.csv` files are saved in `logs/` (gitignored). Log pages in `workshop/flight_log.md` record analyzed metrics (motor ratios, gyro FFT noise floor).
+5. **One Repo, Many Craft**: Every page in `content/` carries `craft_name` (which drone) and `tags` (what topic). `tools/serve_site.py` turns these into `/craft/` and `/tags/` collection pages, so a new drone needs no registry — just frontmatter. Shared preferences live in `content/reference/` with tags but **no** craft, so they are never duplicated per drone. Vocabulary in `content/reference/tagging.md`.
+6. **Blackbox Policy**: Raw `.bbl` and `.csv` files are saved in `logs/` (gitignored). Log pages in `workshop/flight_log.md` record analyzed metrics (motor ratios, gyro FFT noise floor).
