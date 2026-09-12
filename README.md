@@ -56,7 +56,7 @@ Once connected, you can ask your agent to handle any workshop task in natural la
 
 - 🔍 **Diagnostics**: *"Check my FC status, CPU load, and arming disable flags."*
 - 🛠️ **Tuning**: *"Preview the 65mm indoor tuning preset for my drone."*
-- 📡 **Receiver Setup**: *"Check if my ExpressLRS receiver is set up with CRSF and AETR11 channel map."*
+- 📡 **Receiver Setup**: *"Check if my ExpressLRS receiver is set up with CRSF and AETR1234 channel map."*
 - 📊 **Blackbox Extraction**: *"Put my drone into mass storage mode, copy my Blackbox logs, and analyze motor balance."*
 - 📝 **Flight Logging**: *"Capture today's flight telemetry into a new flight log page."*
 - 🌐 **Local Site**: *"Launch my local workshop website so I can view my logs in my browser."*

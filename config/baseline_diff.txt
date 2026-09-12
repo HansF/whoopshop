@@ -18,7 +18,7 @@ set blackbox_device = SPIFLASH
 set blackbox_sample_rate = 1/4
 
 # Dynamic Idle & Anti-Gravity
-set dynamic_idle_min_rpm = 30
+set dyn_idle_min_rpm = 30
 set anti_gravity_gain = 80
 
 # OSD Display Settings (Battery, Craft Name, Warnings, Warnings Elements)

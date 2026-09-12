@@ -26,7 +26,7 @@ Quick reference lookup for essential CLI configuration variables used in 1S and 
 | `set motor_pwm_protocol = DSHOT300` | `DSHOT300` | Motor signal protocol (Bluejay 48kHz recommended) |
 | `set dshot_bidir = ON` | `ON` | Enable Bi-directional DShot eRPM telemetry |
 | `set motor_poles = 12` | `12` | Magnet count (12 poles for 0802/0702 motors) |
-| `set dynamic_idle_min_rpm = 30` | `30` | Minimum motor RPM (3000 RPM) to prevent stalls |
+| `set dyn_idle_min_rpm = 30` | `30` | Minimum motor RPM (3000 RPM) to prevent stalls |
 
 ---
 

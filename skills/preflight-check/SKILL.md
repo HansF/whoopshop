@@ -47,7 +47,7 @@ The tool prints a formatted summary table:
   [PASS] Flight Controller Serial Link (COM3)
   [PASS] Arming Flags: OK (Bench USB active)
   [PASS] DShot Protocol: DSHOT300 (Bi-directional ON)
-  [PASS] Receiver Protocol: CRSF (Channel Map AETR11)
+  [PASS] Receiver Protocol: CRSF (Channel Map AETR1234)
   [WARN] Blackbox Flash: 85% full (Recommend erase before next flight)
 ==================================================
 ```
