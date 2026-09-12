@@ -158,6 +158,25 @@ def assert_valid(commands):
         )
 
 
+def parse_get(output, name):
+    """Return the value of `name` from a `get` reply, or None.
+
+    Betaflight's `get` matches on substring and prints every variable whose
+    name contains the query, so `get craft_name` also returns
+    `osd_craft_name_pos` -- and returns it first, because the list is
+    alphabetical. Taking the first line with an '=' therefore reads the wrong
+    variable. This matches the name exactly.
+    """
+    target = name.strip().lower()
+    for line in output.splitlines():
+        if "=" not in line:
+            continue
+        left, _, right = line.partition("=")
+        if left.strip().lower() == target:
+            return right.strip()
+    return None
+
+
 def check_response(command, output):
     """Raise CliResponseError when the FC's reply signals a rejection."""
     for marker in ERROR_MARKERS:

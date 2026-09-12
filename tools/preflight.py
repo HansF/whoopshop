@@ -14,10 +14,12 @@ import argparse
 import sys
 
 try:
+    from tools.bf_vars import parse_get
     from tools.fc_session import CliSession
 except ImportError:
     import os
     sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    from tools.bf_vars import parse_get
     from tools.fc_session import CliSession
 
 AUDIT_COMMANDS = [
@@ -43,12 +45,14 @@ def _flash_usage(line):
     return values.get("usedsize"), total
 
 
-def _value(output):
-    """Pull the value from a `get name = value` reply."""
-    for line in output.splitlines():
-        if "=" in line and not line.lower().startswith("allowed"):
-            return line.split("=", 1)[1].strip()
-    return output.strip()
+def _value(output, name):
+    """Pull the value of `name` from a `get` reply.
+
+    Uses an exact-name match because Betaflight's `get` also prints every other
+    variable whose name contains the query.
+    """
+    value = parse_get(output, name)
+    return value if value is not None else output.strip()
 
 
 def parse_audit_results(results):
@@ -69,7 +73,7 @@ def parse_audit_results(results):
             rows.append(("System Load", "INFO", line.strip()))
 
     if "get dshot_bidir" in results:
-        state = _value(results["get dshot_bidir"]).upper()
+        state = _value(results["get dshot_bidir"], "dshot_bidir").upper()
         if state in ("ON", "1", "TRUE"):
             rows.append(("Bi-directional DShot", "PASS", "ON (eRPM telemetry active)"))
         else:
@@ -77,7 +81,8 @@ def parse_audit_results(results):
                          f"{state} (enable for RPM filtering)"))
 
     if "get serialrx_provider" in results:
-        rows.append(("Receiver Provider", "PASS", _value(results["get serialrx_provider"])))
+        rows.append(("Receiver Provider", "PASS",
+                     _value(results["get serialrx_provider"], "serialrx_provider")))
 
     if "map" in results:
         mapping = results["map"].strip().splitlines()

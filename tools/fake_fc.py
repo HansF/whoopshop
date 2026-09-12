@@ -39,12 +39,28 @@ def _fixture(name):
         return ""
 
 
+# Betaflight's `get` matches on substring and prints every variable whose name
+# contains the query, alphabetically. These entries deliberately include names
+# that collide, so tests exercise the real behaviour.
+DEFAULT_VARIABLES = {
+    "craft_name": "WHOOP",
+    "dshot_bidir": "ON",
+    "motor_poles": "12",
+    "motor_pwm_protocol": "DSHOT300",
+    "dyn_idle_min_rpm": "30",
+    "osd_craft_name_pos": "395",
+    "osd_vtx_channel_pos": "18522",
+    "serialrx_provider": "CRSF",
+    "vtx_channel": "3",
+    "vtx_band": "5",
+}
+
+
 def default_responses():
     """Canned replies keyed by the exact command text."""
     return {
         "status": _fixture("status.txt"),
         "version": _fixture("version.txt"),
-        "get craft_name": "craft_name = WHOOP",
         "diff all": _fixture("diff_all.txt"),
         "diff": _fixture("diff_all.txt"),
         "get dshot_bidir": _fixture("get_dshot_bidir.txt"),
@@ -69,7 +85,10 @@ class FakeFlightController:
     """
 
     def __init__(self, responses=None, error_on=(), raise_on=None,
-                 prompt_on_handshake=True):
+                 prompt_on_handshake=True, variables=None):
+        self.variables = dict(DEFAULT_VARIABLES)
+        if variables:
+            self.variables.update(variables)
         self.responses = default_responses()
         if responses:
             self.responses.update(responses)
@@ -155,7 +174,19 @@ class FakeFlightController:
         head = command.split(None, 1)[0].lower()
         if head == "get":
             name = command.split(None, 1)[1].strip()
-            return f"{name} = ON\nAllowed values: OFF, ON"
+            # Substring match, as the firmware does. Real boards list by their
+            # internal table order, which put `osd_craft_name_pos` ahead of
+            # `craft_name`. Partial matches are emitted first here so a naive
+            # first-line parser fails in tests the same way it fails on metal.
+            matches = sorted(
+                (n for n in self.variables if name.lower() in n.lower()),
+                key=lambda n: (n.lower() == name.lower(), n.lower()),
+            )
+            if matches:
+                return "\n\n".join(
+                    f"{n} = {self.variables[n]}\nDefault value: 0" for n in matches
+                )
+            return "Invalid name"
         if head == "set":
             remainder = command.split(None, 1)[1]
             name, _, value = remainder.partition("=")

@@ -15,9 +15,20 @@ from tools.bf_vars import (
     assert_valid,
     check_response,
     check_responses,
+    parse_get,
     validate,
     variable_name,
 )
+
+# Verbatim from a BETAFPVG473_V2 running firmware 2026.6.0-alpha. Betaflight's
+# `get` matches on substring, and lists the partial match first.
+REAL_CRAFT_NAME_REPLY = """osd_craft_name_pos = 395
+Allowed range: 0 - 65535
+Default value: 341
+
+craft_name = Crafty
+String length: 1 - 16
+Default value: -"""
 
 
 class VariableNameTest(unittest.TestCase):
@@ -80,6 +91,32 @@ class ValidateTest(unittest.TestCase):
 
     def test_assert_valid_passes_clean_commands(self):
         assert_valid(["set dyn_idle_min_rpm = 30", "status"])
+
+
+class ParseGetTest(unittest.TestCase):
+    """`get` returns every variable containing the query, partial match first."""
+
+    def test_exact_name_wins_over_earlier_partial_match(self):
+        self.assertEqual(parse_get(REAL_CRAFT_NAME_REPLY, "craft_name"), "Crafty")
+
+    def test_naive_first_match_would_have_been_wrong(self):
+        """Documents the bug: the first '=' line belongs to another variable."""
+        naive = REAL_CRAFT_NAME_REPLY.split("=", 1)[1].splitlines()[0].strip()
+        self.assertEqual(naive, "395")
+        self.assertNotEqual(naive, parse_get(REAL_CRAFT_NAME_REPLY, "craft_name"))
+
+    def test_the_partial_match_is_still_readable_by_its_own_name(self):
+        self.assertEqual(parse_get(REAL_CRAFT_NAME_REPLY, "osd_craft_name_pos"), "395")
+
+    def test_simple_reply(self):
+        self.assertEqual(parse_get("dshot_bidir = ON", "dshot_bidir"), "ON")
+
+    def test_absent_name_returns_none(self):
+        self.assertIsNone(parse_get("dshot_bidir = ON", "motor_poles"))
+
+    def test_metadata_lines_are_ignored(self):
+        reply = "vtx_band = 5\nAllowed range: 0 - 8\nDefault value: 0"
+        self.assertEqual(parse_get(reply, "vtx_band"), "5")
 
 
 class ResponseTest(unittest.TestCase):

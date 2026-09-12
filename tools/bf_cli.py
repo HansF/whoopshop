@@ -11,8 +11,15 @@ Guarantees CLI exit discipline (exit noreboot or save) so the Flight Controller
 never remains locked in CLI mode.
 """
 import argparse
+import os
 import sys
 import time
+
+# Running this file directly puts tools/ on sys.path, not the repo root, so the
+# `tools.` package imports below would fail. Add the repo root explicitly.
+_REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+if _REPO_ROOT not in sys.path:
+    sys.path.insert(0, _REPO_ROOT)
 
 try:
     import serial

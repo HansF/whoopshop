@@ -138,6 +138,14 @@ class CaptureLogTest(unittest.TestCase):
     def test_version_without_board_line_is_tolerated(self):
         self.assertNotIn("board", capture_log.parse_version("# Betaflight / F405 4.4.0"))
 
+    def test_craft_name_survives_a_colliding_variable(self):
+        """`get craft_name` also returns `osd_craft_name_pos`, listed first."""
+        fake = FakeFlightController()
+        with mock.patch.object(capture_log, "CliSession", bound_session(fake)):
+            metrics = capture_log.capture_telemetry()
+        self.assertEqual(metrics["craft_name"], "WHOOP")
+        self.assertNotEqual(metrics["craft_name"], "395")
+
     def test_telemetry_fills_board_and_craft_name(self):
         fake = FakeFlightController()
         with mock.patch.object(capture_log, "CliSession", bound_session(fake)):
@@ -246,6 +254,13 @@ class PreflightTest(unittest.TestCase):
         rows = preflight.parse_audit_results({"get dshot_bidir": "dshot_bidir = OFF"})
         statuses = {item: status for item, status, _ in rows}
         self.assertEqual(statuses["Bi-directional DShot"], "WARN")
+
+    def test_receiver_provider_ignores_colliding_variables(self):
+        reply = ("osd_rx_provider_pos = 2048\n\n"
+                 "serialrx_provider = CRSF\nDefault value: 0")
+        rows = preflight.parse_audit_results({"get serialrx_provider": reply})
+        details = {item: detail for item, _, detail in rows}
+        self.assertEqual(details["Receiver Provider"], "CRSF")
 
 
 if __name__ == "__main__":

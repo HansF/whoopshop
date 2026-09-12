@@ -17,10 +17,12 @@ import sys
 
 try:
     from tools.analyze_log import analyze, format_markdown
+    from tools.bf_vars import parse_get
     from tools.fc_session import CliSession
 except ImportError:
     sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
     from tools.analyze_log import analyze, format_markdown
+    from tools.bf_vars import parse_get
     from tools.fc_session import CliSession
 
 
@@ -123,13 +125,11 @@ def capture_telemetry(port=None):
     metrics = parse_cli_status(results.get("status", ""))
     metrics.update(parse_version(results.get("version", "")))
 
-    craft = results.get("get craft_name", "")
-    if "=" in craft:
-        # Take the first line only: some variables print an "Allowed values"
-        # line underneath, which must not end up in the craft name.
-        value = craft.split("=", 1)[1].splitlines()[0].strip()
-        if value:
-            metrics["craft_name"] = value
+    # Exact match matters here: `get craft_name` also returns
+    # `osd_craft_name_pos`, and returns it first.
+    craft = parse_get(results.get("get craft_name", ""), "craft_name")
+    if craft:
+        metrics["craft_name"] = craft
 
     return metrics
 
