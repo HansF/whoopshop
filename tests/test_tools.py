@@ -1,0 +1,152 @@
+"""Tests for the tools that talk to the flight controller through CliSession."""
+import os
+import sys
+import unittest
+from unittest import mock
+
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+from tools import backup_restore, motor_tool, preflight
+from tools.bf_vars import validate
+from tools.fake_fc import FakeFlightController
+from tools.fc_session import CliSession
+
+FIXTURES = os.path.join(os.path.dirname(os.path.abspath(__file__)), "fixtures")
+
+
+def bound_session(fake):
+    """A CliSession subclass wired to `fake`, for patching into a tool."""
+    class BoundSession(CliSession):
+        def __init__(self, *args, **kwargs):
+            kwargs.update(serial_factory=fake.as_factory(),
+                          delay_scale=0, verbose=False)
+            kwargs.setdefault("port", "FAKE")
+            super().__init__(*args, **kwargs)
+    return BoundSession
+
+
+class MotorSafetyTest(unittest.TestCase):
+    """A motor left spinning on the bench is the worst failure here."""
+
+    def test_refuses_without_props_off(self):
+        with self.assertRaises(SystemExit):
+            motor_tool.test_motor_spin(1, props_off=False)
+
+    def test_refuses_unsafe_throttle(self):
+        with self.assertRaises(SystemExit):
+            motor_tool.test_motor_spin(1, props_off=True, throttle=1800)
+
+    def test_stops_motor_after_normal_spin(self):
+        fake = FakeFlightController()
+        with mock.patch.object(motor_tool, "CliSession", bound_session(fake)):
+            motor_tool.test_motor_spin(1, props_off=True, duration=0)
+        self.assertIn("motor 1 1050", fake.commands)
+        self.assertIn("motor 1 1000", fake.commands)
+        self.assertLess(fake.commands.index("motor 1 1050"),
+                        fake.commands.index("motor 1 1000"))
+
+    def test_stops_motor_when_spin_raises(self):
+        """A dropped link mid-spin must still send the stop command."""
+        fake = FakeFlightController(
+            raise_on={"motor 1 1050": RuntimeError("cable yanked")})
+        with mock.patch.object(motor_tool, "CliSession", bound_session(fake)):
+            with self.assertRaises(RuntimeError):
+                motor_tool.test_motor_spin(1, props_off=True, duration=0)
+        self.assertIn("motor 1 1000", fake.commands)
+
+    def test_stops_motor_on_keyboard_interrupt(self):
+        """Ctrl-C during a spin must not leave the motor running."""
+        fake = FakeFlightController(raise_on={"motor 1 1050": KeyboardInterrupt()})
+        with mock.patch.object(motor_tool, "CliSession", bound_session(fake)):
+            with self.assertRaises(KeyboardInterrupt):
+                motor_tool.test_motor_spin(1, props_off=True, duration=0)
+        self.assertIn("motor 1 1000", fake.commands)
+        self.assertEqual(fake.commands[-1], "exit noreboot")
+
+
+class BackupTest(unittest.TestCase):
+
+    def setUp(self):
+        with open(os.path.join(FIXTURES, "diff_all.txt"), encoding="utf-8") as handle:
+            self.diff = handle.read()
+
+    def test_extract_drops_comments_and_blanks(self):
+        commands = backup_restore.extract_commands(self.diff)
+        self.assertTrue(commands)
+        for command in commands:
+            self.assertFalse(command.startswith("#"))
+            self.assertEqual(command, command.strip())
+            self.assertTrue(command)
+
+    def test_extract_keeps_real_commands(self):
+        commands = backup_restore.extract_commands(self.diff)
+        for expected in ("batch start", "batch end", "board_name BETAFPVG473",
+                         "set craft_name = WHOOP", "profile 0"):
+            self.assertIn(expected, commands)
+
+    def test_no_banner_text_survives_capture(self):
+        """The old stdout-scraping capture embedded '===== diff all ====='."""
+        fake = FakeFlightController()
+        with bound_session(fake)() as fc:
+            captured = fc.run("diff all")
+        commands = backup_restore.extract_commands(captured)
+        self.assertNotIn("=====", " ".join(commands))
+        for command in commands:
+            self.assertFalse(command.startswith("====="))
+
+    def test_roundtrip_is_lossless(self):
+        """Capture, write, read back: the command list must be identical."""
+        fake = FakeFlightController()
+        with bound_session(fake)() as fc:
+            captured = fc.run("diff all")
+        original = backup_restore.extract_commands(captured)
+
+        file_text = (
+            "# WhoopShop FC backup created 2026-09-12_100000\n"
+            "# Port: FAKE\n#\n" + captured + "\n"
+        )
+        self.assertEqual(backup_restore.extract_commands(file_text), original)
+
+    def test_restore_resets_to_defaults_first(self):
+        fake = FakeFlightController()
+        with mock.patch.object(backup_restore, "CliSession", bound_session(fake)):
+            path = os.path.join(FIXTURES, "diff_all.txt")
+            backup_restore.restore_backup(path, assume_yes=True)
+        self.assertEqual(fake.commands[0], "defaults nosave")
+        self.assertEqual(fake.commands[-1], "save")
+        self.assertIn("set craft_name = WHOOP", fake.commands)
+
+    def test_restore_aborts_without_confirmation(self):
+        fake = FakeFlightController()
+        with mock.patch.object(backup_restore, "CliSession", bound_session(fake)), \
+             mock.patch("builtins.input", return_value="no"):
+            with self.assertRaises(SystemExit):
+                backup_restore.restore_backup(os.path.join(FIXTURES, "diff_all.txt"))
+        self.assertEqual(fake.commands, [])
+
+
+class PreflightTest(unittest.TestCase):
+
+    def test_audit_commands_are_valid(self):
+        self.assertEqual(validate(preflight.AUDIT_COMMANDS), [])
+
+    def test_report_flags_blocking_arming_reason(self):
+        rows = preflight.parse_audit_results(
+            {"status": "Arming disable flags: CLI MSP THROTTLE"})
+        statuses = {item: status for item, status, _ in rows}
+        self.assertEqual(statuses["Arming Disable Flags"], "WARN")
+
+    def test_cli_and_msp_alone_are_not_a_warning(self):
+        rows = preflight.parse_audit_results(
+            {"status": "Arming disable flags: CLI MSP"})
+        statuses = {item: status for item, status, _ in rows}
+        self.assertEqual(statuses["Arming Disable Flags"], "PASS")
+
+    def test_bidirectional_dshot_off_warns(self):
+        rows = preflight.parse_audit_results({"get dshot_bidir": "dshot_bidir = OFF"})
+        statuses = {item: status for item, status, _ in rows}
+        self.assertEqual(statuses["Bi-directional DShot"], "WARN")
+
+
+if __name__ == "__main__":
+    unittest.main()

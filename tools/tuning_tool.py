@@ -12,11 +12,13 @@ import argparse
 import sys
 
 try:
-    from tools.bf_cli import execute_cli, find_fc_port
+    from tools.bf_vars import assert_valid, check_responses
+    from tools.fc_session import CliSession
 except ImportError:
     import os
     sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-    from tools.bf_cli import execute_cli, find_fc_port
+    from tools.bf_vars import assert_valid, check_responses
+    from tools.fc_session import CliSession
 
 
 PRESETS = {
@@ -35,7 +37,7 @@ PRESETS = {
             "set i_yaw = 85",
             "set d_yaw = 0",
             "set f_yaw = 100",
-            "set dynamic_idle_min_rpm = 30",
+            "set dyn_idle_min_rpm = 30",
             "set anti_gravity_gain = 80",
         ]
     },
@@ -54,7 +56,7 @@ PRESETS = {
             "set i_yaw = 90",
             "set d_yaw = 0",
             "set f_yaw = 115",
-            "set dynamic_idle_min_rpm = 35",
+            "set dyn_idle_min_rpm = 35",
             "set anti_gravity_gain = 120",
         ]
     },
@@ -69,7 +71,7 @@ PRESETS = {
             "set i_roll = 90",
             "set d_roll = 38",
             "set f_roll = 85",
-            "set dynamic_idle_min_rpm = 28",
+            "set dyn_idle_min_rpm = 28",
             "set anti_gravity_gain = 70",
         ]
     }
@@ -101,9 +103,12 @@ def apply_preset(name, preview=True, port=None):
         print(f"  python tools/tuning_tool.py --preset {name} --apply")
     else:
         print("[!] WARNING: Ensure ALL PROPELLERS ARE REMOVED before applying settings.")
-        port = find_fc_port(target_port=port)
-        print(f"# Applying preset '{name}' to FC on {port}...", file=sys.stderr)
-        execute_cli(port, preset["commands"], save=True)
+        # Catch a bad variable name here rather than letting the FC answer
+        # 'Invalid name' and silently skip that line of the preset.
+        assert_valid(preset["commands"])
+        with CliSession(port=port, save=True) as fc:
+            results = fc.run_many(preset["commands"])
+        check_responses(results)
         print(f"\n[+] Preset '{name}' successfully saved to EEPROM!")
 
 

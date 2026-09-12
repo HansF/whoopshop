@@ -20,35 +20,41 @@ import sys
 import time
 
 try:
-    from tools.bf_cli import execute_cli, find_fc_port
+    from tools.fc_session import CliSession
 except ImportError:
     # Handle direct script invocation from tools/ dir
     sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-    from tools.bf_cli import execute_cli, find_fc_port
+    from tools.fc_session import CliSession
 
 
 def get_flash_info(port=None):
     """Query flash_info over CLI."""
-    port = find_fc_port(target_port=port)
     print("# Querying flash_info...", file=sys.stderr)
-    execute_cli(port, ["flash_info"])
+    with CliSession(port=port) as fc:
+        print(fc.run("flash_info"))
 
 
 def erase_flash(port=None):
-    """Erase onboard flash memory."""
-    port = find_fc_port(target_port=port)
+    """Erase onboard flash memory.
+
+    `flash_erase` acts immediately on the flash chip. It needs no EEPROM write,
+    so the session exits with `exit noreboot` rather than `save`, leaving the
+    board available for MSP instead of rebooting it.
+    """
     print("# WARNING: Erasing onboard flash memory...", file=sys.stderr)
-    execute_cli(port, ["flash_erase"], save=True)
+    with CliSession(port=port) as fc:
+        print(fc.run("flash_erase", timeout=120.0))
+    print("[+] Blackbox flash erased.")
 
 
 def trigger_msc_mode(port=None):
     """Put FC into USB Mass-Storage Mode."""
-    port = find_fc_port(target_port=port)
     print("# Rebooting FC into USB Mass Storage Mode (msc)...", file=sys.stderr)
     try:
-        execute_cli(port, ["msc"])
-    except SystemExit:
-        pass  # FC disconnects immediately on msc, so exit is expected
+        with CliSession(port=port) as fc:
+            fc.run("msc", timeout=5.0)
+    except Exception:
+        pass  # The FC drops the USB link on `msc`, so a read error is expected
 
     print("\n[!] Flight Controller rebooted into Mass Storage Mode.")
     print("    - The FC now acts as a USB flash drive labelled 'BETAFLT'.")

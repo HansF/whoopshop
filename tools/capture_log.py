@@ -16,10 +16,10 @@ import re
 import sys
 
 try:
-    from tools.bf_cli import execute_cli, find_fc_port
+    from tools.fc_session import CliSession
 except ImportError:
     sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-    from tools.bf_cli import execute_cli, find_fc_port
+    from tools.fc_session import CliSession
 
 
 def parse_cli_status(output_text):
@@ -46,27 +46,27 @@ def parse_cli_status(output_text):
 
 
 def capture_telemetry(port=None):
-    """Connect to FC and capture status and diff values."""
-    port = find_fc_port(target_port=port)
-    print(f"# Querying Flight Controller on {port} for telemetry capture...", file=sys.stderr)
-
-    # We capture status and key variables
-    raw_status = ""
-    craft_name = "WHOOP_SHOP"
-
+    """Read status and key settings from the FC and return parsed metrics."""
     try:
-        # Import io to capture stdout temporarily
-        import io
-        from contextlib import redirect_stdout
-
-        f = io.StringIO()
-        with redirect_stdout(f):
-            execute_cli(port, ["status", "get craft_name", "get blackbox_sample_rate", "get motor_pwm_protocol"])
-        raw_status = f.getvalue()
+        with CliSession(port=port) as fc:
+            results = fc.run_many([
+                "status",
+                "get craft_name",
+                "get blackbox_sample_rate",
+                "get motor_pwm_protocol",
+            ])
     except Exception as err:
-        print(f"Warning: Could not fetch live CLI telemetry: {err}", file=sys.stderr)
+        print(f"Warning: could not fetch live CLI telemetry: {err}", file=sys.stderr)
+        results = {}
 
-    metrics = parse_cli_status(raw_status)
+    metrics = parse_cli_status(results.get("status", ""))
+
+    craft = results.get("get craft_name", "")
+    if "=" in craft:
+        value = craft.split("=", 1)[1].strip()
+        if value:
+            metrics["craft_name"] = value
+
     return metrics
 
 

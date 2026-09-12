@@ -15,10 +15,12 @@ import os
 import sys
 
 try:
-    from tools.bf_cli import execute_cli, find_fc_port
+    from tools.bf_vars import check_response
+    from tools.fc_session import CliSession
 except ImportError:
     sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-    from tools.bf_cli import execute_cli, find_fc_port
+    from tools.bf_vars import check_response
+    from tools.fc_session import CliSession
 
 
 def get_backup_dir():
@@ -29,7 +31,7 @@ def get_backup_dir():
 
 
 def create_backup(name=None, port=None):
-    port = find_fc_port(target_port=port)
+    """Capture `diff all` to a timestamped, replayable file."""
     backup_dir = get_backup_dir()
 
     now_str = datetime.datetime.now().strftime("%Y-%m-%d_%H%M%S")
@@ -37,28 +39,43 @@ def create_backup(name=None, port=None):
     filename = f"backup_{now_str}{suffix}.txt"
     filepath = os.path.join(backup_dir, filename)
 
-    print(f"# Fetching CLI diff all from {port}...", file=sys.stderr)
+    with CliSession(port=port) as fc:
+        print(f"# Fetching `diff all` from {fc.port}...", file=sys.stderr)
+        diff_text = fc.run("diff all", timeout=90.0)
+        resolved_port = fc.port
 
-    import io
-    from contextlib import redirect_stdout
+    check_response("diff all", diff_text)
 
-    buf = io.StringIO()
-    try:
-        with redirect_stdout(buf):
-            execute_cli(port, ["diff all"])
-    except Exception as err:
-        print(f"ERROR: Failed to fetch diff from FC: {err}")
+    commands = extract_commands(diff_text)
+    if not commands:
+        print("ERROR: The flight controller returned no configuration commands.")
+        print("       Nothing was written. Check the connection and retry.")
         sys.exit(1)
 
-    diff_text = buf.getvalue()
-
     with open(filepath, "w", encoding="utf-8") as f:
-        f.write(f"# WhoopShop FC Backup created on {now_str}\n")
-        f.write(f"# Port: {port}\n\n")
-        f.write(diff_text)
+        f.write(f"# WhoopShop FC backup created {now_str}\n")
+        f.write(f"# Port: {resolved_port}\n")
+        f.write(f"# Restore with: python tools/backup_restore.py --restore {filename}\n")
+        f.write("#\n")
+        f.write(diff_text.rstrip() + "\n")
 
-    print(f"[+] Backup successfully saved to: `{filepath}`")
+    print(f"[+] Backup saved to `{filepath}` ({len(commands)} commands).")
     return filepath
+
+
+def extract_commands(text):
+    """Return the replayable CLI commands from a diff, dropping comments.
+
+    Betaflight comments start with '#'. Everything else in a `diff all` body
+    is a command, including `batch start`, `board_name`, and `profile`.
+    """
+    commands = []
+    for line in text.splitlines():
+        stripped = line.strip()
+        if not stripped or stripped.startswith("#"):
+            continue
+        commands.append(stripped)
+    return commands
 
 
 def list_backups():
@@ -77,7 +94,12 @@ def list_backups():
     print("==================================================\n")
 
 
-def restore_backup(filepath, port=None):
+def restore_backup(filepath, port=None, assume_yes=False):
+    """Replay a backup onto the flight controller.
+
+    Resets to defaults first. Without that step a restore only overlays the
+    saved values, leaving any setting changed since the backup in place.
+    """
     if not os.path.exists(filepath):
         backup_dir = get_backup_dir()
         alt_path = os.path.join(backup_dir, filepath)
@@ -89,19 +111,43 @@ def restore_backup(filepath, port=None):
 
     print(f"# Reading backup file: {filepath}")
     with open(filepath, "r", encoding="utf-8") as f:
-        lines = f.readlines()
-
-    # Filter comments and empty lines, keep CLI commands
-    commands = [line.strip() for line in lines if line.strip() and not line.strip().startswith("#")]
+        commands = extract_commands(f.read())
 
     if not commands:
         print("ERROR: Backup file contains no valid CLI commands.")
         sys.exit(1)
 
-    port = find_fc_port(target_port=port)
-    print(f"[!] Restoring {len(commands)} CLI commands to FC on {port}...", file=sys.stderr)
-    execute_cli(port, commands, save=True)
-    print(f"\n[+] Configuration successfully restored from `{filepath}` and saved!")
+    print(f"\n[!] This will erase the current configuration and replay "
+          f"{len(commands)} commands from the backup.")
+    print("[!] Ensure ALL PROPELLERS ARE REMOVED before restoring.")
+
+    if not assume_yes:
+        answer = input("Type 'restore' to continue: ").strip().lower()
+        if answer != "restore":
+            print("Aborted. Nothing was changed.")
+            sys.exit(1)
+
+    # `defaults nosave` clears settings in RAM; the session's closing `save`
+    # is what commits the restored configuration and reboots the board.
+    payload = ["defaults nosave"] + commands
+
+    with CliSession(port=port, save=True) as fc:
+        print(f"# Restoring {len(commands)} commands to FC on {fc.port}...",
+              file=sys.stderr)
+        results = fc.run_many(payload, timeout=90.0)
+
+    rejected = []
+    for command, output in results.items():
+        if any(m in output for m in ("Invalid name", "Unknown command", "Parse error")):
+            rejected.append(f"{command} -> {output.strip().splitlines()[-1]}")
+
+    if rejected:
+        print(f"\n[!] {len(rejected)} command(s) were rejected by the firmware:")
+        for item in rejected:
+            print(f"      {item}")
+        print("    The rest of the configuration was restored and saved.")
+    else:
+        print(f"\n[+] Configuration restored from `{filepath}` and saved.")
 
 
 def main():
@@ -111,13 +157,14 @@ def main():
     parser.add_argument("--list", action="store_true", help="List all saved configuration backups")
     parser.add_argument("--restore", metavar="FILE.txt", help="Restore CLI configuration from backup file")
     parser.add_argument("--port", help="Serial port device")
+    parser.add_argument("--yes", "-y", action="store_true", help="Skip the restore confirmation prompt")
 
     args = parser.parse_args()
 
     if args.backup:
         create_backup(name=args.name, port=args.port)
     elif args.restore:
-        restore_backup(args.restore, port=args.port)
+        restore_backup(args.restore, port=args.port, assume_yes=args.yes)
     else:
         list_backups()
 

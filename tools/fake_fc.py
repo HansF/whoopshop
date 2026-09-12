@@ -66,11 +66,16 @@ class FakeFlightController:
         written: Raw byte payloads received, including the bare `#` handshake.
     """
 
-    def __init__(self, responses=None, error_on=(), prompt_on_handshake=True):
+    def __init__(self, responses=None, error_on=(), raise_on=None,
+                 prompt_on_handshake=True):
         self.responses = default_responses()
         if responses:
             self.responses.update(responses)
         self.error_on = set(error_on)
+        # {command: exception} -- simulates the link dying mid-command, e.g. a
+        # yanked USB cable or a Ctrl-C. The command is recorded before the
+        # exception fires, so cleanup behaviour stays observable.
+        self.raise_on = dict(raise_on or {})
         self.prompt_on_handshake = prompt_on_handshake
 
         self.commands = []
@@ -104,6 +109,8 @@ class FakeFlightController:
         text = data.decode("utf-8", "replace").strip()
         if text:
             self.commands.append(text)
+            if text in self.raise_on:
+                raise self.raise_on[text]
             body = self._reply_for(text)
             echoed = text.encode("utf-8") + b"\r\n"
             self._out += echoed + body.encode("utf-8") + PROMPT

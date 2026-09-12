@@ -14,85 +14,93 @@ import argparse
 import sys
 
 try:
-    from tools.bf_cli import execute_cli, find_fc_port
+    from tools.fc_session import CliSession
 except ImportError:
     import os
     sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-    from tools.bf_cli import execute_cli, find_fc_port
+    from tools.fc_session import CliSession
+
+AUDIT_COMMANDS = [
+    "status",
+    "get dshot_bidir",
+    "get serialrx_provider",
+    "map",
+    "flash_info",
+]
 
 
-def parse_audit_results(output_text):
-    results = []
+def _value(output):
+    """Pull the value from a `get name = value` reply."""
+    for line in output.splitlines():
+        if "=" in line and not line.lower().startswith("allowed"):
+            return line.split("=", 1)[1].strip()
+    return output.strip()
 
-    # 1. Arming flags
-    if "Arming disable flags:" in output_text:
-        line = [l for l in output_text.splitlines() if "Arming disable flags:" in l][0]
-        flags = line.split(":")[-1].strip()
-        # CLI flag is expected while connected
-        problematic = [f for f in flags.split() if f not in ("CLI", "NOPROOF", "RXLOSS")]
-        if not problematic:
-            results.append(("Arming Disable Flags", "PASS", f"OK ({flags})"))
+
+def parse_audit_results(results):
+    """Turn a {command: output} map into (item, status, detail) rows."""
+    rows = []
+
+    status_text = results.get("status", "")
+    for line in status_text.splitlines():
+        if "Arming disable flags:" in line:
+            flags = line.split(":", 1)[1].strip()
+            # CLI and MSP are expected while a USB session is open.
+            blocking = [f for f in flags.split() if f not in ("CLI", "MSP")]
+            if blocking:
+                rows.append(("Arming Disable Flags", "WARN", f"Blocking: {' '.join(blocking)}"))
+            else:
+                rows.append(("Arming Disable Flags", "PASS", f"OK ({flags})"))
+        elif line.startswith("CPU:"):
+            rows.append(("System Load", "INFO", line.strip()))
+
+    if "get dshot_bidir" in results:
+        state = _value(results["get dshot_bidir"]).upper()
+        if state in ("ON", "1", "TRUE"):
+            rows.append(("Bi-directional DShot", "PASS", "ON (eRPM telemetry active)"))
         else:
-            results.append(("Arming Disable Flags", "WARN", f"Flags active: {flags}"))
+            rows.append(("Bi-directional DShot", "WARN",
+                         f"{state} (enable for RPM filtering)"))
 
-    # 2. DShot eRPM telemetry
-    if "dshot_bidir" in output_text:
-        line = [l for l in output_text.splitlines() if "dshot_bidir" in l][0]
-        state = line.split("=")[-1].strip()
-        if state.upper() in ("ON", "1", "TRUE"):
-            results.append(("Bi-directional DShot", "PASS", "ON (eRPM telemetry active)"))
-        else:
-            results.append(("Bi-directional DShot", "WARN", "OFF (Recommend enabling for eRPM filtering)"))
+    if "get serialrx_provider" in results:
+        rows.append(("Receiver Provider", "PASS", _value(results["get serialrx_provider"])))
 
-    # 3. Serial RX Provider
-    if "serialrx_provider" in output_text:
-        line = [l for l in output_text.splitlines() if "serialrx_provider" in l][0]
-        provider = line.split("=")[-1].strip()
-        results.append(("Receiver Provider", "PASS", f"{provider}"))
+    if "map" in results:
+        mapping = results["map"].strip().splitlines()
+        if mapping:
+            rows.append(("Channel Map", "INFO", mapping[-1].strip()))
 
-    # 4. Flash info
-    if "FlashFS" in output_text or "usedSize" in output_text:
-        for line in output_text.splitlines():
-            if "usedSize" in line and "totalSize" in line:
-                results.append(("Blackbox Flash", "INFO", line.strip()))
+    flash_text = results.get("flash_info", "")
+    for line in flash_text.splitlines():
+        if "usedSize" in line:
+            rows.append(("Blackbox Flash", "INFO", line.strip()))
+            break
 
-    return results
+    return rows
 
 
 def run_preflight_audit(port=None):
-    port = find_fc_port(target_port=port)
-    print(f"# Running WhoopShop Pre-Flight Audit on {port}...\n", file=sys.stderr)
+    with CliSession(port=port) as fc:
+        print(f"# Running WhoopShop Pre-Flight Audit on {fc.port}...\n", file=sys.stderr)
+        results = fc.run_many(AUDIT_COMMANDS)
+        resolved_port = fc.port
 
-    import io
-    from contextlib import redirect_stdout
-
-    buf = io.StringIO()
-    try:
-        with redirect_stdout(buf):
-            execute_cli(port, [
-                "status",
-                "get dshot_bidir",
-                "get serialrx_provider",
-                "get map",
-                "flash_info",
-            ])
-    except Exception as err:
-        print(f"ERROR: Could not complete audit over serial: {err}")
-        sys.exit(1)
-
-    raw_output = buf.getvalue()
-    results = parse_audit_results(raw_output)
+    rows = parse_audit_results(results)
 
     print("==================================================")
     print("  🛸 WhoopShop Pre-Flight Audit Report")
     print("==================================================")
-    print(f"  Target Port: {port}\n")
+    print(f"  Target Port: {resolved_port}\n")
 
-    for item, status, desc in results:
-        status_badge = f"[{status}]"
-        print(f"  {status_badge:<8} {item:<22} : {desc}")
+    for item, status, detail in rows:
+        print(f"  [{status}]{'':<{max(0, 6 - len(status))}} {item:<22} : {detail}")
 
-    print("==================================================\n")
+    warnings = sum(1 for _, status, _ in rows if status == "WARN")
+    print("==================================================")
+    if warnings:
+        print(f"  {warnings} warning(s). Review before flying.\n")
+    else:
+        print("  No warnings.\n")
 
 
 def main():

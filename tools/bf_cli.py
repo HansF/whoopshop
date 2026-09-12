@@ -85,54 +85,20 @@ def read_until_prompt(ser, timeout=30.0, quiet_for=0.3):
 
 
 def execute_cli(port, commands, save=False):
-    """Connect to FC, send commands, and cleanly exit CLI mode."""
-    print(f"# Connecting to Flight Controller on {port}...", file=sys.stderr)
+    """Run commands in one CLI session and print each result.
 
-    try:
-        ser = serial.Serial(port, 115200, timeout=0.2)
-    except serial.SerialException as err:
-        raise SystemExit(f"Failed to open port {port}: {err}\nEnsure no other program (Betaflight Configurator, terminal) is using the port.")
+    Thin printing wrapper over `tools.fc_session.CliSession`, which owns the
+    port, returns output as data, and guarantees the closing `exit noreboot`
+    or `save`. Prefer CliSession directly when you need the output back.
+    """
+    from tools.fc_session import CliSession
 
-    with ser:
-        ser.dtr = True
-        time.sleep(0.4)
-        ser.reset_input_buffer()
-
-        # Step 1: Send bare '#' without line endings to initiate CLI handshake
-        ser.write(b"#")
-        ser.flush()
-
-        prompt_output = read_until_prompt(ser, timeout=6.0)
-        if "#" not in prompt_output:
-            raise SystemExit(
-                "No CLI prompt received from FC.\n"
-                "Possible causes:\n"
-                "  1. FC is stuck in CLI mode from a previous session -> Unplug and replug USB.\n"
-                "  2. FC is in DFU or Mass Storage mode -> Replug FC.\n"
-                "  3. Serial port speed mismatch."
-            )
-
-        # Step 2: Run commands
-        for cmd in commands:
-            ser.reset_input_buffer()
-            ser.write((cmd + "\r\n").encode("utf-8"))
-            ser.flush()
-            out = read_until_prompt(ser, timeout=60.0)
-
-            print(f"===== {cmd} =====")
-            print(out.strip())
+    with CliSession(port=port, save=save) as session:
+        for command in commands:
+            output = session.run(command)
+            print(f"===== {command} =====")
+            print(output)
             print()
-
-        # Step 3: Guaranteed CLI exit discipline
-        exit_cmd = b"save\r\n" if save else b"exit noreboot\r\n"
-        ser.write(exit_cmd)
-        ser.flush()
-        time.sleep(1.5 if save else 0.5)
-
-        if save:
-            print("# Saved settings to EEPROM. FC rebooting.", file=sys.stderr)
-        else:
-            print("# Exited CLI mode cleanly (no reboot). FC ready for MSP / normal operation.", file=sys.stderr)
 
 
 def main():

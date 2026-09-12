@@ -12,24 +12,32 @@ import argparse
 import sys
 
 try:
-    from tools.bf_cli import execute_cli, find_fc_port
+    from tools.bf_vars import assert_valid, check_responses
+    from tools.fc_session import CliSession
 except ImportError:
     import os
     sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-    from tools.bf_cli import execute_cli, find_fc_port
+    from tools.bf_vars import assert_valid, check_responses
+    from tools.fc_session import CliSession
 
 
 def get_vtx_info(port=None):
-    port = find_fc_port(target_port=port)
     print("# Querying VTX & OSD configuration...", file=sys.stderr)
-    execute_cli(port, [
-        "get vtx_band",
-        "get vtx_channel",
-        "get vtx_power",
-        "get vtx_pit_mode",
-        "get osd_vbat_pos",
-        "get osd_craft_name_pos",
-    ])
+    with CliSession(port=port) as fc:
+        results = fc.run_many([
+            "get vtx_band",
+            "get vtx_channel",
+            "get vtx_power",
+            "get vtx_pit_mode",
+            "get osd_vbat_pos",
+            "get osd_craft_name_pos",
+        ])
+    check_responses(results)
+
+    for command, output in results.items():
+        print(f"===== {command} =====")
+        print(output)
+        print()
 
 
 def set_vtx(band=None, channel=None, power=None, pitmode=None, port=None):
@@ -47,9 +55,11 @@ def set_vtx(band=None, channel=None, power=None, pitmode=None, port=None):
         print("No VTX parameters specified. Use --info to view settings.")
         return
 
-    port = find_fc_port(target_port=port)
-    print(f"# Applying VTX parameters on {port}...", file=sys.stderr)
-    execute_cli(port, cmds, save=True)
+    assert_valid(cmds)
+    with CliSession(port=port, save=True) as fc:
+        print(f"# Applying VTX parameters on {fc.port}...", file=sys.stderr)
+        results = fc.run_many(cmds)
+    check_responses(results)
     print("\n[+] VTX configuration saved to EEPROM!")
 
 
