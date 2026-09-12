@@ -43,7 +43,7 @@ Set up on 2026-09-12 to match the pilot preferences carried over from
 | **Horizon** | AUX2 | `1300`–`1700` | Middle position |
 | **Beeper** | AUX1 | `1700`–`2100` | |
 | **Crashflip** | AUX5 | `1700`–`2100` | Auto-rearm ON, rate 30 |
-| **Prearm** | AUX1 | `900`–`2100` | Full range |
+| **Blackbox** | AUX1 | `900`–`2100` | Full range, always logging |
 | **OSD profile** | AUX3 | `900`–`2100` | Adjustment function 29 |
 | **VTX power** | AUX6 | 4 steps | 25 / 100 / 200 / 400 mW |
 

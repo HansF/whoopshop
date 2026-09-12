@@ -25,7 +25,7 @@ Established on Crafty and ported to the Air65 on 2026-09-12.
 | **Horizon** | 2 | AUX2 | `1300`–`1700` |
 | **Beeper** | 13 | AUX1 | `1700`–`2100` |
 | **Crashflip** | 35 | AUX5 | `1700`–`2100` |
-| **Prearm** | 26 | AUX1 | `900`–`2100` |
+| **Blackbox** | 26 | AUX1 | `900`–`2100` |
 | **OSD profile** | adjustment 29 | AUX3 | `900`–`2100` |
 
 Arm deliberately uses a narrow `1800`–`2100` window rather than the more common
