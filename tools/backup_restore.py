@@ -127,14 +127,25 @@ def restore_backup(filepath, port=None, assume_yes=False):
             print("Aborted. Nothing was changed.")
             sys.exit(1)
 
-    # `defaults nosave` clears settings in RAM; the session's closing `save`
-    # is what commits the restored configuration and reboots the board.
-    payload = ["defaults nosave"] + commands
+    # Betaflight's own `diff all` output is already a complete restore script:
+    # it opens with `batch start`, resets with `defaults nosave`, and ends with
+    # `save`. Re-wrapping such a file would reset twice and then send a second
+    # `save` to a board that the first one already rebooted. Only wrap a file
+    # that lacks its own scaffolding.
+    self_contained = "defaults nosave" in commands and commands[-1] == "save"
 
-    with CliSession(port=port, save=True) as fc:
+    if self_contained:
+        body, closer = commands[:-1], commands[-1]
+    else:
+        body, closer = ["defaults nosave"] + commands, "save"
+
+    with CliSession(port=port) as fc:
         print(f"# Restoring {len(commands)} commands to FC on {fc.port}...",
               file=sys.stderr)
-        results = fc.run_many(payload, timeout=90.0)
+        results = fc.run_many(body, timeout=90.0)
+        # `save` reboots the board, so no prompt returns; finish() accounts
+        # for that and stops the session from sending a further exit command.
+        fc.finish(closer)
 
     rejected = []
     for command, output in results.items():

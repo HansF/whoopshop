@@ -29,6 +29,20 @@ AUDIT_COMMANDS = [
 ]
 
 
+def _flash_usage(line):
+    """Pull (usedSize, size) out of a flash_info line, or (None, None)."""
+    values = {}
+    for field in line.replace(",", " ").split():
+        if "=" in field:
+            key, _, value = field.partition("=")
+            try:
+                values[key.strip().lower()] = int(value.strip())
+            except ValueError:
+                continue
+    total = values.get("size") or values.get("totalsize")
+    return values.get("usedsize"), total
+
+
 def _value(output):
     """Pull the value from a `get name = value` reply."""
     for line in output.splitlines():
@@ -72,9 +86,20 @@ def parse_audit_results(results):
 
     flash_text = results.get("flash_info", "")
     for line in flash_text.splitlines():
-        if "usedSize" in line:
+        if "usedSize" not in line:
+            continue
+        used, total = _flash_usage(line)
+        if used is not None and total:
+            percent = used / total * 100.0
+            detail = f"{percent:.0f}% used ({used:,} of {total:,} bytes)"
+            # A full chip records nothing. The pilot flies and gets no log.
+            status = "WARN" if percent >= 90.0 else "PASS"
+            if percent >= 99.0:
+                detail += " -- FULL, erase before flying"
+            rows.append(("Blackbox Flash", status, detail))
+        else:
             rows.append(("Blackbox Flash", "INFO", line.strip()))
-            break
+        break
 
     return rows
 

@@ -1,0 +1,22 @@
+# version
+# Betaflight / STM32G47X (G473) 2026.6.0-alpha Apr 15 2026 / 16:24:57 (norevision) MSP API: 1.48
+
+# start the command batch
+batch start
+
+# reset configuration to default settings
+defaults nosave
+
+board_name BETAFPVG473_V2
+manufacturer_id BEFH
+
+# name: WHOOP
+set craft_name = WHOOP
+set dyn_idle_min_rpm = 30
+
+# profile
+profile 0
+set p_pitch = 52
+
+# save configuration
+save

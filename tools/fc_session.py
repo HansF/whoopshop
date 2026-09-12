@@ -160,6 +160,21 @@ class CliSession:
         raw = read_until_prompt(self._ser, timeout=timeout, quiet_for=self.quiet_for)
         return self._clean(command, raw)
 
+    def finish(self, command="save", settle=2.0):
+        """Send a terminating command that reboots the board.
+
+        `save`, `defaults` and `msc` drop the USB link, so no prompt comes
+        back. This writes the command, waits for the reboot to begin, and
+        marks the session closed so `__exit__` does not then try to send
+        `exit noreboot` down a port that is going away.
+        """
+        if self._ser is None:
+            raise CliError("CLI session is not open.")
+        self._write_line(command)
+        time.sleep(settle * self.delay_scale if self.delay_scale else 0)
+        self.exited = True
+        self._log(f"# Sent `{command}`; the FC is rebooting.")
+
     def run_many(self, commands, timeout=60.0):
         """Send several commands, returning an ordered {command: output} map."""
         results = {}

@@ -161,6 +161,70 @@ class CaptureLogTest(unittest.TestCase):
         self.assertEqual(metrics["board"], "Unknown")
 
 
+class SelfContainedRestoreTest(unittest.TestCase):
+    """Real firmware emits a diff that is already a complete restore script.
+
+    It opens with `batch start`, resets with `defaults nosave`, and closes with
+    `save`. Re-wrapping such a file resets twice and sends a second `save` to a
+    board the first one already rebooted.
+    """
+
+    PATH = os.path.join(FIXTURES, "diff_self_contained.txt")
+
+    def test_fixture_matches_real_firmware_shape(self):
+        commands = backup_restore.extract_commands(open(self.PATH).read())
+        self.assertEqual(commands[0], "batch start")
+        self.assertIn("defaults nosave", commands)
+        self.assertEqual(commands[-1], "save")
+
+    def test_defaults_is_not_sent_twice(self):
+        fake = FakeFlightController()
+        with mock.patch.object(backup_restore, "CliSession", bound_session(fake)):
+            backup_restore.restore_backup(self.PATH, assume_yes=True)
+        self.assertEqual(fake.commands.count("defaults nosave"), 1)
+
+    def test_save_is_not_sent_twice(self):
+        fake = FakeFlightController()
+        with mock.patch.object(backup_restore, "CliSession", bound_session(fake)):
+            backup_restore.restore_backup(self.PATH, assume_yes=True)
+        self.assertEqual(fake.commands.count("save"), 1)
+        self.assertEqual(fake.commands[-1], "save")
+
+    def test_no_exit_command_follows_the_reboot(self):
+        fake = FakeFlightController()
+        with mock.patch.object(backup_restore, "CliSession", bound_session(fake)):
+            backup_restore.restore_backup(self.PATH, assume_yes=True)
+        self.assertNotIn("exit noreboot", fake.commands)
+
+    def test_plain_command_list_still_gets_wrapped(self):
+        """A file without the scaffolding must still be reset and saved."""
+        fake = FakeFlightController()
+        with mock.patch.object(backup_restore, "CliSession", bound_session(fake)):
+            backup_restore.restore_backup(
+                os.path.join(FIXTURES, "diff_all.txt"), assume_yes=True)
+        self.assertEqual(fake.commands[0], "defaults nosave")
+        self.assertEqual(fake.commands[-1], "save")
+
+
+class FlashWarningTest(unittest.TestCase):
+
+    def test_full_flash_warns_rather_than_informs(self):
+        rows = preflight.parse_audit_results(
+            {"flash_info": "FlashFS size=16777216, usedSize=16777216"})
+        item, status, detail = rows[0]
+        self.assertEqual(status, "WARN")
+        self.assertIn("FULL", detail)
+
+    def test_mostly_empty_flash_passes(self):
+        rows = preflight.parse_audit_results(
+            {"flash_info": "FlashFS size=16777216, usedSize=2097152"})
+        self.assertEqual(rows[0][1], "PASS")
+
+    def test_unparseable_flash_line_falls_back_to_info(self):
+        rows = preflight.parse_audit_results({"flash_info": "usedSize unknown"})
+        self.assertEqual(rows[0][1], "INFO")
+
+
 class PreflightTest(unittest.TestCase):
 
     def test_audit_commands_are_valid(self):
