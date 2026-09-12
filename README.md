@@ -1,8 +1,8 @@
 # 🛸 WhoopShop — AI-Assisted Tiny Whoop FPV Workshop
 
-Welcome to **WhoopShop**! This is a complete, self-contained starter template and toolkit for 1S/2S micro FPV drones (Tiny Whoops). 
+Welcome to **WhoopShop**! This is a complete, self-contained starter template and toolkit for 1S/2S micro FPV drones (Tiny Whoops).
 
-Whether you are a complete beginner or an experienced FPV pilot, WhoopShop lets you pair up with AI coding agents—such as **Google Antigravity** or **Claude Code / Cloud Code**—to tune your flight controller, analyze Blackbox logs, log test flights, and manage build specs cleanly over USB serial.
+WhoopShop is built **agent-first**: you plug in your drone, launch your AI coding agent—such as **Google Antigravity** or **Claude Code / Cloud Code**—and let the agent handle connection testing, hardware diagnostics, CLI queries, Blackbox log extraction, and safe tuning for you.
 
 ---
 
@@ -21,78 +21,62 @@ Whether you are a complete beginner or an experienced FPV pilot, WhoopShop lets 
 >    Micro FPV Video Transmitters (VTX) and All-In-One (AIO) flight controllers generate significant heat and rely on flight airflow to stay cool. **When connected on your bench, use a small USB fan to cool the board, or unplug the LiPo battery and power the FC via USB only.**
 >
 > 4. **ALWAYS BACK UP YOUR CONFIGURATION FIRST**:
->    Before making any changes, save a backup of your original working Betaflight configuration:
+>    Before making any changes, ask your AI agent to create a backup of your original working Betaflight configuration:
 >    ```bash
 >    python tools/bf_cli.py "diff all" > config/my_original_backup.txt
 >    ```
 
 ---
 
-## 🚀 Beginner Quickstart: Get Up to Speed in 5 Minutes
+## 🚀 Quickstart: Let Your AI Agent Handle Everything
 
-You do **not** need to install Betaflight Configurator, Hugo, Node, or complex background servers. WhoopShop is **100% self-contained in Python** and works on **Windows, macOS, and Linux**.
+WhoopShop is **100% self-contained in Python** and works on **Windows, macOS, and Linux**. You do **not** need to run complex setup commands or manually test connection ports—your AI agent does it for you.
 
-### Step 1: Install Python Dependencies
-Ensure you have Python 3 installed on your computer, open a terminal/command prompt in this folder, and run:
+### 1. Plug In Your Drone
+Connect your Tiny Whoop flight controller to your computer using a USB cable (props off!). Make sure it is a data cable.
 
-```bash
-pip install -r requirements.txt
-```
-*(This installs `pyserial`, the only requirement needed to talk to your drone).*
-
-### Step 2: Plug In Your Drone
-Connect your Tiny Whoop flight controller to your computer using a USB cable. 
-*(Make sure it is a **data cable**, not a power-only charging cable).*
-
-### Step 3: Test Your Connection
-Run the diagnostic scanner tool:
-
-```bash
-python tools/fc_check.py
-```
-
-If your drone is connected properly, you will see output like this:
-```text
-Found 1 Flight Controller candidate(s):
-  [1] Device       : /dev/ttyACM0 (or COM3 on Windows)
-      Description  : BETAFPVG473_V2
-      Notes        : Flight Controller (VCP)
-```
-
-### Step 4: Start Your AI Agent
+### 2. Open Workspace in Your AI Agent
 Open this workspace folder in **Google Antigravity** or start **Claude Code**:
 
 ```bash
 claude
 ```
 
-Your AI coding agent will automatically read `AGENT.md` and `skills/` to assist you safely! You can ask your agent questions like:
-- *"Check my current Betaflight status and arming flags."*
-- *"Help me tune my 65mm Whoop for smooth indoor flying."*
-- *"Extract my Blackbox logs and check if my motors are balanced."*
+### 3. Let Your Agent Connect & Inspect
+Simply ask your AI agent:
+> *"Connect to my drone and check hardware status."*
 
-### Step 5: Launch Your Local Workshop Website
-View your personal flight logs and tuning documentation in a sleek web interface running locally on your machine:
-
-```bash
-python tools/serve_site.py
-```
-Open your browser to `http://localhost:8000/`. *(Press `Ctrl+C` in your terminal to stop the web server).*
+Your AI agent automatically reads `AGENT.md` and `skills/`, runs `python tools/fc_check.py` to auto-detect your Flight Controller serial port, verifies system tools, and reports connection status back to you!
 
 ---
 
-## 🛠️ Tool Cheat Sheet (What Does Each Tool Do?)
+## 💬 What You Can Ask Your AI Agent
 
-| Tool Script | What It Does (Plain English) | How to Run It |
+Once connected, you can ask your agent to handle any workshop task in natural language:
+
+- 🔍 **Diagnostics**: *"Check my FC status, CPU load, and arming disable flags."*
+- 🛠️ **Tuning**: *"Preview the 65mm indoor tuning preset for my drone."*
+- 📡 **Receiver Setup**: *"Check if my ExpressLRS receiver is set up with CRSF and AETR11 channel map."*
+- 📊 **Blackbox Extraction**: *"Put my drone into mass storage mode, copy my Blackbox logs, and analyze motor balance."*
+- 📝 **Flight Logging**: *"Capture today's flight telemetry into a new flight log page."*
+- 🌐 **Local Site**: *"Launch my local workshop website so I can view my logs in my browser."*
+
+---
+
+## 🛠️ Tool Cheat Sheet (For Reference)
+
+Your AI agent uses these bundled Python tools automatically:
+
+| Tool Script | What It Does | Handled by Agent |
 | :--- | :--- | :--- |
-| **`tools/fc_check.py`** | Scans USB ports to detect your connected flight controller. | `python tools/fc_check.py` |
-| **`tools/bf_cli.py`** | Sends safe Betaflight CLI commands without locking your drone's serial link. | `python tools/bf_cli.py "status"` |
-| **`tools/bf_msp.py`** | Reads live telemetry and RC receiver channel values (Roll, Pitch, Yaw, Throttle). | `python tools/bf_msp.py --samples 5` |
-| **`tools/tuning_tool.py`** | Previews or applies curated PID & rate tuning presets for 65mm/75mm Whoops. | `python tools/tuning_tool.py --list` |
-| **`tools/elrs_tool.py`** | Checks and configures ExpressLRS receiver settings (CRSF & channel mapping). | `python tools/elrs_tool.py --info` |
-| **`tools/blackbox_tool.py`** | Reboots FC into USB Drive mode (`msc`) to copy and decode `.bbl` flight logs. | `python tools/blackbox_tool.py --info` |
-| **`tools/capture_log.py`** | Automatically captures live FC telemetry into a published flight log entry. | `python tools/capture_log.py --title "First Flight"` |
-| **`tools/serve_site.py`** | Generates and serves your local workshop website at `http://localhost:8000/`. | `python tools/serve_site.py` |
+| **`tools/fc_check.py`** | Scans USB ports and identifies connected Flight Controller. | ✅ Automatic |
+| **`tools/bf_cli.py`** | Executes Betaflight CLI commands safely with bare `#` handshake and auto-exit. | ✅ Automatic |
+| **`tools/bf_msp.py`** | Reads live telemetry and RC channel values (Roll, Pitch, Yaw, Throttle). | ✅ Automatic |
+| **`tools/tuning_tool.py`** | Previews and applies curated PID & rate tuning presets for 65mm/75mm Whoops. | ✅ Automatic |
+| **`tools/elrs_tool.py`** | Checks and configures ExpressLRS receiver settings (CRSF & channel mapping). | ✅ Automatic |
+| **`tools/blackbox_tool.py`** | Reboots FC into USB Drive mode (`msc`) to copy and decode `.bbl` flight logs. | ✅ Automatic |
+| **`tools/capture_log.py`** | Captures live FC telemetry into a published flight log Markdown entry. | ✅ Automatic |
+| **`tools/serve_site.py`** | Generates and serves your local workshop website at `http://localhost:8000/`. | ✅ Automatic |
 
 ---
 
@@ -102,9 +86,9 @@ Open your browser to `http://localhost:8000/`. *(Press `Ctrl+C` in your terminal
 whoopshop/
 ├── AGENT.md                      # Universal instructions & safety rules for AI Coding Agents
 ├── CLAUDE.md                     # Quick guidelines for Claude Code / Cloud Code
-├── README.md                     # This manual & beginner safety guide
+├── README.md                     # Agent-first workspace manual & safety guide
 ├── requirements.txt              # Python requirements (pyserial)
-├── package.json                  # Optional NPM script shortcuts (npm run dev, npm run check, etc.)
+├── package.json                  # Optional NPM script shortcuts
 ├── skills/                       # Google Antigravity Skills
 │   ├── betaflight/
 │   │   └── SKILL.md              # FC CLI & MSP interaction skill

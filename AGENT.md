@@ -14,7 +14,7 @@ These instructions apply to all AI Coding Agents (Google Antigravity, Claude Cod
 > 
 > **Backup Before Save**: Before applying configuration changes (`set ...` + `--save`), always create a full CLI diff backup:
 > ```bash
-> python tools/bf_cli.py "diff all" > config/backup_$(date +%Y%m%d_%H%M%S).txt
+> python tools/backup_restore.py --backup
 > ```
 
 ---
@@ -36,12 +36,18 @@ WhoopShop includes a 100% pure Python local documentation website and an automat
 
 All serial interactions with the Flight Controller must use the provided Python tools in `tools/`. Do **not** write custom serial logic or rely on third-party MCP servers.
 
-### Core Command Tools
-- **Inspect System & Ports**: `python tools/fc_check.py`
+### Complete Tool Inventory
+- **System Check**: `python tools/fc_check.py`
+- **Pre-Flight Audit**: `python tools/preflight.py`
 - **Execute CLI Commands**: `python tools/bf_cli.py "<cmd1>" "<cmd2>"`
 - **Save CLI Changes**: `python tools/bf_cli.py --save "<set_cmd>"`
 - **Read Live MSP Data / RC Channels**: `python tools/bf_msp.py [samples]`
 - **Blackbox Log Helper**: `python tools/blackbox_tool.py`
+- **PID & Rate Tuning Helper**: `python tools/tuning_tool.py`
+- **ExpressLRS RX Helper**: `python tools/elrs_tool.py`
+- **Motor & ESC Helper**: `python tools/motor_tool.py`
+- **VTX & OSD Helper**: `python tools/vtx_osd_tool.py`
+- **Backup & Restore Manager**: `python tools/backup_restore.py`
 - **Telemetry & Log Capturer**: `python tools/capture_log.py`
 - **Local Site Builder & Server**: `python tools/serve_site.py`
 
@@ -69,8 +75,8 @@ All serial interactions with the Flight Controller must use the provided Python 
 ## 5. Workshop Structure
 
 - `content/`: Markdown pages for local site (`content/log/`, `content/spec/`, `content/docs/`, `content/reference/`).
-- `skills/`: Antigravity skills for automated flight controller & tuning workflows.
-- `tools/`: Cross-platform Python tools (`fc_check.py`, `bf_cli.py`, `bf_msp.py`, `blackbox_tool.py`, `capture_log.py`, `serve_site.py`).
-- `config/`: Baseline configuration templates and CLI backups.
+- `skills/`: Antigravity skills (`betaflight`, `blackbox-analysis`, `elrs-config`, `motor-testing`, `preflight-check`, `serial-recovery`, `vtx-osd`).
+- `tools/`: Cross-platform Python tools.
+- `config/`: Baseline configuration templates and CLI backups (`config/backups/`).
 - `workshop/`: `build_spec.md` (hardware inventory) and `flight_log.md` (test history & tuning journal).
 - `logs/`: Local Blackbox log directory.

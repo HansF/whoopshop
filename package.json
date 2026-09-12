@@ -9,12 +9,16 @@
     "site": "python3 tools/serve_site.py",
     "build": "python3 tools/serve_site.py --build-only",
     "check": "python3 tools/fc_check.py",
+    "preflight": "python3 tools/preflight.py",
     "cli": "python3 tools/bf_cli.py",
     "msp": "python3 tools/bf_msp.py",
     "blackbox": "python3 tools/blackbox_tool.py",
     "capture": "python3 tools/capture_log.py",
     "tune": "python3 tools/tuning_tool.py",
-    "elrs": "python3 tools/elrs_tool.py"
+    "elrs": "python3 tools/elrs_tool.py",
+    "motor": "python3 tools/motor_tool.py",
+    "vtx": "python3 tools/vtx_osd_tool.py",
+    "backup": "python3 tools/backup_restore.py --backup"
   },
   "keywords": [
     "tinywhoop",
