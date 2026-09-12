@@ -1,0 +1,210 @@
+# WhoopShop FC backup created 2026-09-12_194209
+# Port: /dev/ttyACM0
+# Restore with: python tools/backup_restore.py --restore backup_2026-09-12_194209_air65_configured.txt
+#
+# version
+# Betaflight / STM32G47X (G473) 2026.6.0-alpha May 15 2026 / 06:14:55 (e92c10887) MSP API: 1.48
+# config rev: 6703db5
+
+# start the command batch
+batch start
+
+# reset configuration to default settings
+defaults nosave
+
+board_name BETAFPVG473_V2
+manufacturer_id BEFH
+mcu_id 002900023235510535303333
+signature 
+
+# name: AIR65 F
+
+# feature
+feature TELEMETRY
+feature OSD
+
+# beacon
+beacon RX_LOST
+beacon RX_SET
+
+# aux
+aux 0 0 3 1800 2100 0 0
+aux 1 1 1 900 1300 0 0
+aux 2 2 1 1300 1700 0 0
+aux 3 13 0 1700 2100 0 0
+aux 5 35 4 1700 2100 0 0
+aux 6 26 0 900 2100 0 0
+
+# adjrange
+adjrange 0 0 2 900 2100 29 2 0 0
+
+# vtxtable
+vtxtable bands 6
+vtxtable channels 8
+vtxtable band 1 BOSCAM_A A FACTORY 5865 5845 5825 5805 5785 5765 5745 5725
+vtxtable band 2 BOSCAM_B B FACTORY 5733 5752 5771 5790 5809 5828 5847 5866
+vtxtable band 3 BOSCAM_E E FACTORY 5705 5685 5665 5645 5885 5905 5925 5945
+vtxtable band 4 FATSHARK F FACTORY 5740 5760 5780 5800 5820 5840 5860 5880
+vtxtable band 5 RACEBAND R FACTORY 5658 5695 5732 5769 5806 5843 5880 5917
+vtxtable band 6 LOWRACE  L FACTORY 5362 5399 5436 5473 5510 5547 5584 5621
+vtxtable powerlevels 5
+vtxtable powervalues 1 2 3 4 0
+vtxtable powerlabels 25 100 200 400 PIT
+
+# vtx
+vtx 0 5 0 0 1 900 1200
+vtx 1 5 0 0 2 1200 1500
+vtx 2 5 0 0 3 1500 1800
+vtx 3 5 0 0 4 1800 2100
+
+# master
+set gyro_lpf1_static_hz = 0
+set gyro_lpf2_static_hz = 600
+set dyn_notch_count = 2
+set dyn_notch_q = 500
+set dyn_notch_min_hz = 110
+set dyn_notch_max_hz = 400
+set gyro_lpf1_dyn_min_hz = 0
+set gyro_lpf1_dyn_max_hz = 550
+set acc_calibration = -2,-7,36,1
+set fpv_mix_degrees = 10
+set dshot_bidir = ON
+set dshot_bitbang = AUTO
+set motor_pwm_protocol = DSHOT300
+set motor_poles = 12
+set align_board_yaw = -135
+set vbat_scale = 113
+set ibata_offset = -600
+set yaw_motors_reversed = ON
+set crashflip_rate = 30
+set crashflip_auto_rearm = ON
+set small_angle = 180
+set simplified_gyro_filter_multiplier = 120
+set osd_warn_bitmask = 140287
+set osd_rssi_alarm = 0
+set osd_rssi_dbm_alarm = -99
+set osd_cap_alarm = 0
+set osd_alt_alarm = 0
+set osd_logo_on_arming_duration = 20
+set osd_vbat_pos = 6529
+set osd_rssi_pos = 226
+set osd_link_quality_pos = 2081
+set osd_rssi_dbm_pos = 289
+set osd_tim_1_pos = 386
+set osd_tim_2_pos = 2455
+set osd_remaining_time_estimate_pos = 33
+set osd_flymode_pos = 6521
+set osd_throttle_pos = 342
+set osd_vtx_channel_pos = 18522
+set osd_crosshairs_pos = 6349
+set osd_ah_pos = 6222
+set osd_current_pos = 384
+set osd_mah_drawn_pos = 386
+set osd_craft_name_pos = 395
+set osd_home_dist_pos = 98
+set osd_flight_dist_pos = 130
+set osd_avg_cell_voltage_pos = 44
+set osd_pit_ang_pos = 97
+set osd_rol_ang_pos = 65
+set osd_battery_usage_pos = 392
+set osd_disarmed_pos = 267
+set osd_esc_tmp_pos = 364
+set osd_esc_rpm_pos = 150
+set osd_core_temp_pos = 278
+set osd_log_status_pos = 161
+set osd_sys_vtx_temp_pos = 64
+set osd_stat_bitmask = 8676
+set osd_displayport_device = MAX7456
+set system_hse_mhz = 0
+set vtx_band = 5
+set vtx_channel = 1
+set vtx_power = 3
+set vtx_low_power_disarm = ON
+set vtx_freq = 5658
+set vcd_video_system = NTSC
+set craft_name = AIR65 F
+set pilot_name = HansF
+
+profile 0
+
+# profile 0
+set profile_name = GF 1219S
+set throttle_boost = 0
+set p_pitch = 56
+set i_pitch = 91
+set d_pitch = 44
+set f_pitch = 41
+set p_roll = 49
+set i_roll = 79
+set d_roll = 35
+set f_roll = 35
+set p_yaw = 49
+set i_yaw = 79
+set f_yaw = 35
+set d_max_roll = 39
+set d_max_pitch = 49
+set d_max_gain = 20
+set auto_profile_cell_count = 1
+set feedforward_jitter_factor = 5
+set dyn_idle_min_rpm = 30
+set simplified_i_gain = 90
+set simplified_d_gain = 120
+set simplified_pi_gain = 110
+set simplified_d_max_gain = 30
+set simplified_feedforward_gain = 30
+set simplified_pitch_d_gain = 110
+set simplified_pitch_pi_gain = 110
+set tpa_rate = 60
+set tpa_breakpoint = 1240
+
+profile 1
+
+profile 2
+
+profile 3
+
+# restore original profile selection
+profile 0
+
+rateprofile 0
+
+# rateprofile 0
+set thr_mid = 40
+set thr_expo = 35
+set thr_hover = 44
+set roll_rc_rate = 17
+set pitch_rc_rate = 17
+set yaw_rc_rate = 12
+set roll_expo = 35
+set pitch_expo = 35
+set yaw_expo = 25
+set roll_srate = 55
+set pitch_srate = 55
+set yaw_srate = 40
+set throttle_limit_type = SCALE
+set throttle_limit_percent = 80
+
+rateprofile 1
+
+rateprofile 2
+
+rateprofile 3
+
+battery_profile 0
+
+# battery_profile 0
+set vbat_max_cell_voltage = 440
+set vbat_warning_cell_voltage = 345
+
+battery_profile 1
+
+battery_profile 2
+
+# restore original rateprofile selection
+rateprofile 0
+
+# restore original battery_profile selection
+battery_profile 0
+
+# save configuration
+save

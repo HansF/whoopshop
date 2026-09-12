@@ -4,6 +4,19 @@ Use this document to record the exact hardware configuration, component breakdow
 
 ---
 
+## 0. Current Fleet
+
+| Craft | Airframe | Board | Notes |
+| :--- | :--- | :--- | :--- |
+| **Crafty** | 65mm whoop | `BETAFPVG473_V2` | Reference craft. Raceband 3, PID profile `GF 1614`. |
+| **AIR65 F** | BetaFPV Air65 65mm | `BETAFPVG473_V2` | Added 2026-09-12. Raceband 1, PID profile `GF 1219S`. |
+
+Per-craft pages live in `content/spec/`, for example `content/spec/air65-build.md`.
+The shared switch layout, rates and throttle curve are recorded once in
+`content/reference/pilot-preferences.md`.
+
+---
+
 ## 1. Craft Overview
 
 - **Craft Name**: `WHOOP_SHOP_01`

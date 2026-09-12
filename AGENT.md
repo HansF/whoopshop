@@ -41,7 +41,7 @@ All serial interactions with the Flight Controller must use the provided Python 
 - **Pre-Flight Audit**: `python tools/preflight.py`
 - **Execute CLI Commands**: `python tools/bf_cli.py "<cmd1>" "<cmd2>"`
 - **Save CLI Changes**: `python tools/bf_cli.py --save "<set_cmd>"`
-- **Read Live MSP Data / RC Channels**: `python tools/bf_msp.py [samples]`
+- **Read Live MSP Data / RC Channels**: `python tools/bf_msp.py --samples [n]`
 - **Blackbox Log Helper**: `python tools/blackbox_tool.py`
 - **PID & Rate Tuning Helper**: `python tools/tuning_tool.py`
 - **ExpressLRS RX Helper**: `python tools/elrs_tool.py`
