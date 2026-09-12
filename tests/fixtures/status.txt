@@ -1,0 +1,12 @@
+MCU F7X2RE Clock=216MHz, Vref=3.30V, Core temp=42degC
+Stack size: 2048, Stack address: 0x20000000
+Config size: 3387, Max available config: 16384
+Devices detected: SPI:2, I2C:1
+Gyros detected: gyro 1 locked dma
+GYRO=ICM42688P, ACC=ICM42688P
+OSD: MAX7456
+BUILD KEY: 1f4f6ee37d20bd32fa4ea1a6c5e79b39 (4.5.1)
+System Uptime: 34 seconds, Current Time: 2026-09-12T10:03:00.000
+CPU:12%, cycle time: 125, GYRO rate: 8000, RX rate: 249, System rate: 9
+Voltage: 0.00V (0S battery - NOT PRESENT)
+Arming disable flags: CLI MSP

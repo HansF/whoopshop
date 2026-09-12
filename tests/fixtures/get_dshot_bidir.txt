@@ -1,0 +1,2 @@
+dshot_bidir = ON
+Allowed values: OFF, ON

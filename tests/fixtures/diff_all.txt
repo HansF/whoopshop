@@ -1,0 +1,25 @@
+# version
+# Betaflight / STM32F7X2 (S7X2) 4.5.1 Jun  1 2026 / 10:00:00 (77d01ba3b) MSP API: 1.46
+
+# start the command batch
+batch start
+
+board_name BETAFPVG473
+manufacturer_id BEFH
+
+# name: WHOOP
+set craft_name = WHOOP
+set dyn_idle_min_rpm = 30
+set anti_gravity_gain = 80
+set motor_pwm_protocol = DSHOT300
+set dshot_bidir = ON
+set motor_poles = 12
+
+# profile 0
+profile 0
+set p_pitch = 52
+set i_pitch = 85
+set d_pitch = 38
+
+# end the command batch
+batch end
