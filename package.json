@@ -1,0 +1,32 @@
+{
+  "name": "whoopshop",
+  "version": "1.0.0",
+  "description": "Standalone cross-platform starter template, local workshop site, and AI agent tools for 1S/2S Tiny Whoop FPV drone workshops.",
+  "private": true,
+  "type": "commonjs",
+  "scripts": {
+    "dev": "python3 tools/serve_site.py",
+    "site": "python3 tools/serve_site.py",
+    "build": "python3 tools/serve_site.py --build-only",
+    "check": "python3 tools/fc_check.py",
+    "cli": "python3 tools/bf_cli.py",
+    "msp": "python3 tools/bf_msp.py",
+    "blackbox": "python3 tools/blackbox_tool.py",
+    "capture": "python3 tools/capture_log.py",
+    "tune": "python3 tools/tuning_tool.py",
+    "elrs": "python3 tools/elrs_tool.py"
+  },
+  "keywords": [
+    "tinywhoop",
+    "betaflight",
+    "fpv",
+    "expresslrs",
+    "antigravity",
+    "claude-code",
+    "blackbox"
+  ],
+  "license": "MIT",
+  "engines": {
+    "node": ">=18"
+  }
+}

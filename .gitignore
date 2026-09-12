@@ -1,0 +1,26 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Generated local site HTML
+public_html/
+
+# Blackbox logs and decoded data files (Keep logs directory structure)
+logs/*.bbl
+logs/*.csv
+logs/*.event
+!logs/.gitkeep
+
+# Node dependencies
+node_modules/
+npm-debug.log*
+
+# OS artifacts
+.DS_Store
+Thumbs.db
+
+# Virtual environments
+venv/
+.venv/
+env/

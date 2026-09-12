@@ -1,0 +1,30 @@
+# WhoopShop Baseline Betaflight Configuration Template
+# For 1S/2S Tiny Whoops (AIO FCs with integrated SPI/Serial ELRS & DShot ESCs)
+
+# Craft identity
+set craft_name = WHOOP_SHOP
+
+# Feature configuration
+feature -MOTOR_STOP
+feature OSD
+feature TELEMETRY
+
+# ESC / Motor Protocol
+set motor_poles = 12
+set dshot_bidir = ON
+
+# Blackbox logging setup (1/4 sample rate saves flash memory)
+set blackbox_device = SPIFLASH
+set blackbox_sample_rate = 1/4
+
+# Dynamic Idle & Anti-Gravity
+set dynamic_idle_min_rpm = 30
+set anti_gravity_gain = 80
+
+# OSD Display Settings (Battery, Craft Name, Warnings, Warnings Elements)
+set osd_vbat_pos = 2433
+set osd_rssi_dbm_pos = 2081
+set osd_warnings_pos = 14465
+set osd_craft_name_pos = 2058
+
+save
