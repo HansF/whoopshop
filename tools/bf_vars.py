@@ -1,6 +1,12 @@
 #!/usr/bin/env python3
 """Betaflight CLI variable registry and response validation.
 
+The variable table is generated from a live flight controller by
+`tools/dump_vars.py` and lives in `tools/bf_vars_table.py`. It carries every
+setting the reference firmware exposes, along with each one's kind and
+constraint, so a value can be checked as well as a name. Regenerate it after a
+firmware update or to match a different board.
+
 Betaflight answers an unrecognised `get`/`set` with an error line and carries
 on. Nothing in the toolchain checked for that, so a typo in a tuning preset
 silently failed to apply. This module catches both classes of mistake:
@@ -13,56 +19,17 @@ versions, the superseded spelling is listed in RENAMED_VARS with its
 replacement so the error message can point at the fix.
 """
 
-# Variables this workspace reads or writes. Not the full firmware set -- it is
-# the allowlist for commands the tools here generate.
-KNOWN_VARS = {
-    # Identity and OSD
-    "craft_name", "osd_profile", "osd_vbat_pos", "osd_craft_name_pos",
-    "osd_rssi_dbm_pos", "osd_warnings_pos",
-    # PID controller
-    "p_pitch", "i_pitch", "d_pitch", "f_pitch",
-    "p_roll", "i_roll", "d_roll", "f_roll",
-    "p_yaw", "i_yaw", "d_yaw", "f_yaw",
-    "d_max_pitch", "d_max_roll", "d_max_yaw", "d_max_gain",
-    "anti_gravity_gain", "anti_gravity_p_gain", "anti_gravity_cutoff_hz",
-    "iterm_relax", "iterm_relax_cutoff", "iterm_relax_type", "iterm_windup",
-    "pidsum_limit", "pidsum_limit_yaw", "tpa_rate", "tpa_breakpoint", "tpa_mode",
-    # Rates
-    "rates_type", "roll_rc_rate", "pitch_rc_rate", "yaw_rc_rate",
-    "roll_srate", "pitch_srate", "yaw_srate",
-    "roll_expo", "pitch_expo", "yaw_expo", "thr_mid", "thr_expo",
-    # Motors and ESC
-    "motor_pwm_protocol", "motor_pwm_rate", "motor_poles", "motor_idle",
-    "motor_output_limit", "dshot_bidir", "dshot_burst", "dshot_bitbang",
-    "min_check", "max_check", "min_command", "max_throttle",
-    "dyn_idle_min_rpm", "dyn_idle_p_gain", "dyn_idle_i_gain", "dyn_idle_d_gain",
-    "dyn_idle_max_increase",
-    # Filters
-    "gyro_lpf1_static_hz", "gyro_lpf2_static_hz",
-    "gyro_lpf1_dyn_min_hz", "gyro_lpf1_dyn_max_hz",
-    "dterm_lpf1_static_hz", "dterm_lpf2_static_hz",
-    "dterm_lpf1_dyn_min_hz", "dterm_lpf1_dyn_max_hz",
-    "dyn_notch_count", "dyn_notch_q", "dyn_notch_min_hz", "dyn_notch_max_hz",
-    "rpm_filter_harmonics", "rpm_filter_q", "rpm_filter_min_hz",
-    "yaw_lowpass_hz",
-    # Receiver and telemetry
-    "serialrx_provider", "serialrx_inverted", "serialrx_halfduplex",
-    "crsf_use_negotiated_baud", "rssi_channel", "rssi_scale", "rssi_offset",
-    "rx_min_usec", "rx_max_usec", "mid_rc", "deadband", "yaw_deadband",
-    # Blackbox
-    "blackbox_device", "blackbox_mode", "blackbox_sample_rate",
-    "blackbox_high_resolution", "blackbox_disable_gyro", "blackbox_disable_rpm",
-    "blackbox_disable_motors",
-    # Video transmitter
-    "vtx_band", "vtx_channel", "vtx_power", "vtx_pit_mode", "vtx_freq",
-    # Battery
-    "vbat_min_cell_voltage", "vbat_max_cell_voltage", "vbat_warning_cell_voltage",
-    "vbat_full_cell_voltage", "battery_meter", "bat_capacity",
-    "force_battery_cell_count", "vbat_sag_compensation",
-    # Safety and failsafe
-    "small_angle", "failsafe_procedure", "failsafe_throttle", "failsafe_delay",
-    "gyro_cal_on_first_arm", "runaway_takeoff_prevention",
-}
+try:
+    from tools.bf_vars_table import FIRMWARE, GENERATED, VARIABLES
+except ImportError:  # pragma: no cover - direct script invocation
+    import os
+    import sys as _sys
+    _sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    from tools.bf_vars_table import FIRMWARE, GENERATED, VARIABLES
+
+# Every setting the reference firmware exposes, read from a live board by
+# tools/dump_vars.py rather than maintained by hand.
+KNOWN_VARS = frozenset(VARIABLES)
 
 # Superseded or invented names -> what to use instead.
 RENAMED_VARS = {
@@ -142,10 +109,50 @@ def validate(commands):
             )
         elif name not in KNOWN_VARS:
             problems.append(
-                f"`{cmd}` targets unknown variable '{name}'. Add it to "
-                f"KNOWN_VARS in tools/bf_vars.py if your firmware supports it."
+                f"`{cmd}` targets unknown variable '{name}'. It is not in the "
+                f"reference firmware ({FIRMWARE}). If your board is newer, "
+                f"regenerate the table with `python tools/dump_vars.py`."
             )
+        else:
+            problem = value_problem(cmd, name)
+            if problem:
+                problems.append(problem)
     return problems
+
+
+def value_problem(command, name):
+    """Check a `set` command's value against the variable's constraint."""
+    if "=" not in command or command.strip().split(None, 1)[0].lower() != "set":
+        return None
+
+    value = command.split("=", 1)[1].strip()
+    if not value:
+        return None
+
+    entry = VARIABLES.get(name, {})
+    kind = entry.get("kind")
+
+    if kind == "enum":
+        allowed = entry.get("values", [])
+        if value.upper() not in {v.upper() for v in allowed}:
+            return (f"`{command}` sets '{name}' to '{value}', which is not one "
+                    f"of: {', '.join(allowed)}.")
+    elif kind == "int":
+        try:
+            number = int(value)
+        except ValueError:
+            # Some integer settings accept a fraction, e.g. blackbox_sample_rate.
+            return None
+        low, high = entry.get("min"), entry.get("max")
+        if low is not None and not low <= number <= high:
+            return (f"`{command}` sets '{name}' to {number}, outside the "
+                    f"allowed range {low} to {high}.")
+    elif kind == "string":
+        longest = entry.get("maxlen")
+        if longest is not None and len(value) > longest:
+            return (f"`{command}` sets '{name}' to {len(value)} characters, "
+                    f"over the {longest} character limit.")
+    return None
 
 
 def assert_valid(commands):

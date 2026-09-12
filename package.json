@@ -21,7 +21,8 @@
     "backup": "python3 tools/backup_restore.py --backup",
     "analyze": "python3 tools/analyze_log.py",
     "test": "python3 -m unittest discover -s tests",
-    "lint": "python3 -m tools.check_presets"
+    "lint": "python3 -m tools.check_presets",
+    "vars": "python3 tools/dump_vars.py --reference"
   },
   "keywords": [
     "tinywhoop",

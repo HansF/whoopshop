@@ -81,6 +81,7 @@ Your AI agent uses these bundled Python tools automatically:
 | **`tools/vtx_osd_tool.py`** | Reads and sets video transmitter band, channel, power, and OSD elements. | ✅ Automatic |
 | **`tools/backup_restore.py`** | Timestamped `diff all` backups and a full, verified restore. | ✅ Automatic |
 | **`tools/analyze_log.py`** | Computes motor balance ratios and gyro noise floor from a decoded log. | ✅ Automatic |
+| **`tools/dump_vars.py`** | Reads every setting your firmware exposes and regenerates the variable reference. | ✅ Automatic |
 | **`tools/serve_site.py`** | Generates and serves your local workshop website at `http://localhost:8000/`. | ✅ Automatic |
 
 ---

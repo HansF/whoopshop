@@ -50,6 +50,7 @@ All serial interactions with the Flight Controller must use the provided Python 
 - **Backup & Restore Manager**: `python tools/backup_restore.py`
 - **Telemetry & Log Capturer**: `python tools/capture_log.py`
 - **Blackbox Log Analyzer**: `python tools/analyze_log.py logs/<decoded>.csv`
+- **Variable Table Generator**: `python tools/dump_vars.py --reference`
 - **Local Site Builder & Server**: `python tools/serve_site.py`
 
 ### Preferred API for New Code
@@ -71,6 +72,21 @@ with CliSession(save=True) as fc:
 Validate any hard-coded command list against `tools/bf_vars.py`. Betaflight
 answers an unknown variable with `Invalid name` and carries on, so an unchecked
 typo fails silently. `python -m tools.check_presets` runs that check in CI.
+
+The variable table is read from a live board by `tools/dump_vars.py`, not
+maintained by hand, and covers every setting the firmware exposes along with
+its type and allowed range. `assert_valid` therefore rejects an out-of-range
+value as well as an unknown name. If the user's firmware differs from the
+table's, regenerate it:
+
+```bash
+python tools/dump_vars.py --reference
+```
+
+Reading a `get` reply requires an exact-name match: Betaflight matches on
+substring, so `get craft_name` also returns `osd_craft_name_pos`, and returns
+it first. Use `tools.bf_vars.parse_get(output, name)` rather than splitting on
+the first `=`.
 
 Run the offline test suite with `python -m unittest discover -s tests`. It needs
 no flight controller; `tools/fake_fc.py` stands in for the board.
