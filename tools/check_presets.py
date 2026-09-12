@@ -8,16 +8,33 @@ carries on, so a preset can appear to apply while silently doing nothing.
 Usage:
     python -m tools.check_presets
 """
+import os
 import sys
 
 try:
     from tools.bf_vars import validate
     from tools.tuning_tool import PRESETS
 except ImportError:
-    import os
     sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
     from tools.bf_vars import validate
     from tools.tuning_tool import PRESETS
+
+REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+# Checked-in CLI scripts users are told to apply to their board. A wrong name
+# here is as damaging as one in a preset, and just as invisible at runtime.
+CONFIG_FILES = [
+    os.path.join("config", "baseline_diff.txt"),
+]
+
+
+def read_cli_file(path):
+    """Return the command lines from a CLI script, dropping comments."""
+    with open(path, encoding="utf-8") as handle:
+        return [
+            line.strip() for line in handle
+            if line.strip() and not line.strip().startswith("#")
+        ]
 
 
 def collect():
@@ -25,6 +42,12 @@ def collect():
     groups = {}
     for name, preset in PRESETS.items():
         groups[f"tuning_tool preset '{name}'"] = list(preset["commands"])
+
+    for relative in CONFIG_FILES:
+        path = os.path.join(REPO_ROOT, relative)
+        if os.path.exists(path):
+            groups[relative] = read_cli_file(path)
+
     return groups
 
 
