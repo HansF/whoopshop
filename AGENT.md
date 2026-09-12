@@ -49,7 +49,31 @@ All serial interactions with the Flight Controller must use the provided Python 
 - **VTX & OSD Helper**: `python tools/vtx_osd_tool.py`
 - **Backup & Restore Manager**: `python tools/backup_restore.py`
 - **Telemetry & Log Capturer**: `python tools/capture_log.py`
+- **Blackbox Log Analyzer**: `python tools/analyze_log.py logs/<decoded>.csv`
 - **Local Site Builder & Server**: `python tools/serve_site.py`
+
+### Preferred API for New Code
+Use `tools/fc_session.CliSession` rather than calling `execute_cli`. It owns the
+serial port for the whole exchange, returns `{command: output}` instead of
+printing, and guarantees the closing `exit noreboot` or `save` from a `finally`
+block:
+
+```python
+from tools.fc_session import CliSession
+from tools.bf_vars import assert_valid, check_responses
+
+commands = ["set dyn_idle_min_rpm = 30"]
+assert_valid(commands)              # rejects names the firmware will refuse
+with CliSession(save=True) as fc:
+    check_responses(fc.run_many(commands))
+```
+
+Validate any hard-coded command list against `tools/bf_vars.py`. Betaflight
+answers an unknown variable with `Invalid name` and carries on, so an unchecked
+typo fails silently. `python -m tools.check_presets` runs that check in CI.
+
+Run the offline test suite with `python -m unittest discover -s tests`. It needs
+no flight controller; `tools/fake_fc.py` stands in for the board.
 
 ### CLI Entry & Exit Discipline
 1. **Bare `#` Handshake**: Entering Betaflight CLI requires writing a bare `#` byte without a newline terminator (`\r\n`). Sending `#\r\n` causes the FC to stay silent. `tools/bf_cli.py` handles this automatically.

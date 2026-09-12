@@ -51,10 +51,22 @@ If `blackbox_decode` is installed:
 python tools/blackbox_tool.py --decode btfl_001.bbl
 ```
 
+### Compute the Metrics
+Do not work these out by hand. `tools/analyze_log.py` computes both:
+
+```bash
+python tools/analyze_log.py logs/btfl_001.01.csv
+python tools/analyze_log.py logs/btfl_001.01.csv --markdown   # flight-log block
+```
+
+`tools/capture_log.py --log-file btfl_001.bbl` calls it automatically and
+embeds the result in the generated log entry, so a decoded CSV in `logs/` is
+all that is needed.
+
 ### Understanding Decoder Outputs
 - **"75% of iterations missing"**: Under default `blackbox_sample_rate = 1/4`, 3 out of 4 loop iterations are omitted by design to save flash. **This is expected decimation, not data loss.**
-- **Motor Balance Ratios**: Compute mean `eRPM[n]` divided by mean `motor[n]` across all 4 motors. Uniform ratios mean healthy motors and solder joints; a single outlier motor indicates a bad solder joint, damaged motor winding, or slipping prop.
-- **Gyro Noise Floor**: Evaluate FFT power spectral density of `gyroADC` signals to identify frame resonances or electrical motor noise.
+- **Motor Balance Ratios**: Mean `eRPM[n]` divided by mean `motor[n]` for each motor. Uniform ratios mean healthy motors and solder joints. The tool reports each motor's deviation from the fleet mean and warns past 5%, which points at a cold solder joint, a damaged winding, a worn bearing, or a slipping prop. Ratios read `n/a` when bidirectional DShot was off, since the log then carries no eRPM.
+- **Gyro Noise Floor**: Mean spectral magnitude above 100 Hz per axis. Below that threshold the signal is dominated by actual craft motion; what remains above it is frame resonance and electrical motor noise. Compare axes against each other and across flights rather than against an absolute number.
 
 ---
 

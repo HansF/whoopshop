@@ -16,10 +16,53 @@ import re
 import sys
 
 try:
+    from tools.analyze_log import analyze, format_markdown
     from tools.fc_session import CliSession
 except ImportError:
     sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    from tools.analyze_log import analyze, format_markdown
     from tools.fc_session import CliSession
+
+
+def find_decoded_csv(log_file):
+    """Locate the CSV that blackbox_decode wrote for a .bbl, if any.
+
+    blackbox_decode names its output `<stem>.NN.csv`, one per flight in the
+    file, so the first match is used.
+    """
+    if not log_file:
+        return None
+
+    logs_dir = os.path.join(
+        os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "logs")
+    stem = os.path.splitext(os.path.basename(log_file))[0]
+
+    if not os.path.isdir(logs_dir):
+        return None
+
+    candidates = sorted(
+        name for name in os.listdir(logs_dir)
+        if name.startswith(stem) and name.endswith(".csv")
+    )
+    return os.path.join(logs_dir, candidates[0]) if candidates else None
+
+
+def blackbox_section(log_file):
+    """Real motor and gyro metrics when a decoded log exists, else guidance."""
+    csv_path = find_decoded_csv(log_file)
+    if not csv_path:
+        return (
+            "- No decoded log analyzed. Produce one with:\n"
+            "  ```bash\n"
+            "  python tools/blackbox_tool.py --decode "
+            f"{log_file or 'btfl_001.bbl'}\n"
+            "  ```"
+        )
+
+    try:
+        return format_markdown(analyze(csv_path))
+    except Exception as err:
+        return f"- Could not analyze `{os.path.basename(csv_path)}`: {err}"
 
 
 def parse_cli_status(output_text):
@@ -93,6 +136,8 @@ def create_log_entry(title, log_file="", dry_run=False, port=None):
         "cpu_load": "CPU: 12%",
     }
 
+    analysis = blackbox_section(log_file)
+
     markdown_content = f"""---
 title: "{title}"
 date: {date_str}
@@ -122,12 +167,7 @@ draft: false
 
 ## 3. Blackbox Analysis Findings
 
-- **Motor Balance Ratios** (`mean eRPM / mean motor output`):
-  - Motor 1 (Rear Right) : `0.00`
-  - Motor 2 (Front Right): `0.00`
-  - Motor 3 (Rear Left)  : `0.00`
-  - Motor 4 (Front Left) : `0.00`
-- **Gyro Noise Floor**:
+{analysis}
 
 ---
 

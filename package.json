@@ -18,7 +18,10 @@
     "elrs": "python3 tools/elrs_tool.py",
     "motor": "python3 tools/motor_tool.py",
     "vtx": "python3 tools/vtx_osd_tool.py",
-    "backup": "python3 tools/backup_restore.py --backup"
+    "backup": "python3 tools/backup_restore.py --backup",
+    "analyze": "python3 tools/analyze_log.py",
+    "test": "python3 -m unittest discover -s tests",
+    "lint": "python3 -m tools.check_presets"
   },
   "keywords": [
     "tinywhoop",

@@ -1,1 +1,6 @@
 pyserial>=3.5
+
+# Optional. tools/analyze_log.py uses numpy for its FFT when available and
+# falls back to a pure-Python implementation when it is not, so the core
+# install stays dependency-free.
+# numpy>=1.21

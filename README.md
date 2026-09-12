@@ -23,7 +23,7 @@ WhoopShop is built **agent-first**: you plug in your drone, launch your AI codin
 > 4. **ALWAYS BACK UP YOUR CONFIGURATION FIRST**:
 >    Before making any changes, ask your AI agent to create a backup of your original working Betaflight configuration:
 >    ```bash
->    python tools/bf_cli.py "diff all" > config/my_original_backup.txt
+>    python tools/backup_restore.py --backup
 >    ```
 
 ---
@@ -76,6 +76,11 @@ Your AI agent uses these bundled Python tools automatically:
 | **`tools/elrs_tool.py`** | Checks and configures ExpressLRS receiver settings (CRSF & channel mapping). | ✅ Automatic |
 | **`tools/blackbox_tool.py`** | Reboots FC into USB Drive mode (`msc`) to copy and decode `.bbl` flight logs. | ✅ Automatic |
 | **`tools/capture_log.py`** | Captures live FC telemetry into a published flight log Markdown entry. | ✅ Automatic |
+| **`tools/preflight.py`** | Runs a multi-point arming, DShot, receiver, and flash audit before you fly. | ✅ Automatic |
+| **`tools/motor_tool.py`** | Motor and ESC diagnostics, plus a props-off bench spin test. | ✅ Automatic |
+| **`tools/vtx_osd_tool.py`** | Reads and sets video transmitter band, channel, power, and OSD elements. | ✅ Automatic |
+| **`tools/backup_restore.py`** | Timestamped `diff all` backups and a full, verified restore. | ✅ Automatic |
+| **`tools/analyze_log.py`** | Computes motor balance ratios and gyro noise floor from a decoded log. | ✅ Automatic |
 | **`tools/serve_site.py`** | Generates and serves your local workshop website at `http://localhost:8000/`. | ✅ Automatic |
 
 ---
